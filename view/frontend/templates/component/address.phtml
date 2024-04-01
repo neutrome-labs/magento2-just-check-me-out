@@ -1,0 +1,50 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+
+$quote = $quoteViewModel->getQuote();
+$address = $quote->getShippingAddress();
+?>
+
+<form action="#" x-data="window.psteamJustCheckMeOut.component.createQuoteAddressForm()">
+    <?= $components->render('atom/button', [
+        'text' => '[dev] refresh',
+        'attributes' => ['type' => 'button', '@click' => 'await addressGqlWrapper.refresh()']
+    ]) ?>
+    <?= $components->render('block/address-fieldset', [
+        'attributes' => [
+            'email' => [
+                'value' => $address->getEmail(),
+                'x-model' => 'formData.email',
+            ],
+            'firstname' => [
+                'value' => $address->getFirstname(),
+                'x-model' => 'formData.firstname',
+            ],
+            'lastname' => [
+                'value' => $address->getLastname(),
+                'x-model' => 'formData.lastname',
+            ],
+            'telephone' => [
+                'value' => $address->getTelephone(),
+                'x-model' => 'formData.telephone',
+            ]
+        ]
+    ]) ?>
+    <?= $components->render('atom/button', [
+        'text' => '[dev] save explicitly',
+        'attributes' => ['type' => 'button', '@click' => '']
+    ]) ?>
+</form>

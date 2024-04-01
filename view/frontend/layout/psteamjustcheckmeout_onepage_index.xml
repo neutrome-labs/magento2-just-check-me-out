@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd"
+      layout="1column">
+    <body>
+        <referenceContainer name="before.body.end">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="checkout.onepage.script-alpine"
+                   template="PerspectiveTeam_JustCheckMeOut::onepage/script-alpine.phtml">
+            </block>
+            <block class="Magento\Framework\View\Element\Template"
+                   name="checkout.onepage.api"
+                   template="PerspectiveTeam_JustCheckMeOut::onepage/api.phtml">
+                <arguments>
+                    <argument name="ssrGqlResolver"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlResolver
+                    </argument>
+                    <argument name="quoteViewModel"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                    </argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+        <referenceContainer name="content">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="checkout.onepage"
+                   template="PerspectiveTeam_JustCheckMeOut::onepage/main.phtml">
+                <arguments>
+                    <argument name="quoteViewModel"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                    </argument>
+                    <argument name="headlessComponentRenderer"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                    </argument>
+                </arguments>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.address" as="address"
+                       template="PerspectiveTeam_JustCheckMeOut::component/address.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.shipping-method-list" as="shipping-method-list"
+                       template="PerspectiveTeam_JustCheckMeOut::component/shipping-method-list.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.payment-method-list" as="payment-method-list"
+                       template="PerspectiveTeam_JustCheckMeOut::component/payment-method-list.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.items" as="items"
+                       template="PerspectiveTeam_JustCheckMeOut::component/items.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.totals" as="totals"
+                       template="PerspectiveTeam_JustCheckMeOut::component/totals.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Framework\View\Element\Template"
+                       name="checkout.onepage.place-button" as="place-button"
+                       template="PerspectiveTeam_JustCheckMeOut::component/place-button.phtml">
+                    <arguments>
+                        <argument name="quoteViewModel"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
+                        </argument>
+                        <argument name="headlessComponentRenderer"
+                                  xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                        </argument>
+                    </arguments>
+                </block>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

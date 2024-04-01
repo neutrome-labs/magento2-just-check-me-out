@@ -1,0 +1,23 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+?>
+
+<div x-data="window.psteamJustCheckMeOut.component.createPlaceOrder('<?= $quoteViewModel->getMaskedQuoteId() ?>')">
+    <?= $components->render('atom/button', [
+        'text' => 'Place Order',
+        'attributes' => ['type' => 'button', '@click' => 'alert(`ok! - ${await place()}`)']
+    ]) ?>
+</div>

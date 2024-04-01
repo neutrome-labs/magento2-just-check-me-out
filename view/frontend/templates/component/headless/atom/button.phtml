@@ -1,0 +1,16 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+?>
+
+<button
+    style="padding: 10px; background-color: #eee; border: 1px solid #ccc; border-radius: 5px;"
+    <?php foreach ($block->getData('attributes') ?? [] as $k => $v) {
+        echo " $k=\"$v\"";
+    } ?>
+><?= $block->getData('text') ?></button>

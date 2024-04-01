@@ -1,0 +1,24 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+?>
+
+<div class="input-text">
+    <?php if ($label = $block->getData('label')): ?>
+        <label for="<?= $escaper->escapeHtmlAttr($block->getData('attributes/name')) ?>">
+            <?= $label ?>
+        </label>
+    <?php endif; ?>
+    <?= $components->render('atom/input-text', [
+        'attributes' => $block->getData('attributes') ?? []
+    ]) ?>
+</div>

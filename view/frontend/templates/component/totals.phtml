@@ -1,0 +1,20 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+
+$quote = $quoteViewModel->getQuote();
+?>
+
+<p><?= $quote->getGrandTotal() ?> <span><?= $quote->getCurrency()->getQuoteCurrencyCode() ?></span></p>

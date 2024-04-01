@@ -1,0 +1,40 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+?>
+
+<div style="display: flex; gap: 10px;"
+     class="psteam_justcheckmeout">
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
+         class="psteam_justcheckmeout__address">
+        <h2>Customer</h2>
+        <?= $block->getChildHtml('address') ?>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
+         class="psteam_justcheckmeout__methods">
+        <div style="flex: 1;"
+             class="psteam_justcheckmeout__methods__shipping">
+            <h2>Shipping Method</h2>
+            <?= $block->getChildHtml('shipping-method-list') ?>
+        </div>
+        <div style="flex: 1;"
+             class="psteam_justcheckmeout__methods__payment">
+            <h2>Payment Method</h2>
+            <?= $block->getChildHtml('payment-method-list') ?>
+        </div>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
+         class="psteam_justcheckmeout__place">
+        <h2>Order</h2>
+        <?= $block->getChildHtml('items') ?>
+        <?= $block->getChildHtml('totals') ?>
+        <?= $block->getChildHtml('place-button') ?>
+    </div>
+</div>

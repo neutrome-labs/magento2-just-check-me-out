@@ -1,0 +1,41 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+?>
+
+<?= $components->render('block/input-text', [
+    'label' => 'Email',
+    'attributes' => array_merge($block->getData('attributes/email') ?? [], [
+        'name' => 'email',
+    ])
+]) ?>
+
+<?= $components->render('block/input-text', [
+    'label' => 'First Name',
+    'attributes' => array_merge($block->getData('attributes/firstname') ?? [], [
+        'name' => 'firstname',
+    ])
+]) ?>
+
+<?= $components->render('block/input-text', [
+    'label' => 'Last Name',
+    'attributes' => array_merge($block->getData('attributes/lastname') ?? [], [
+        'name' => 'lastname',
+    ])
+]) ?>
+
+<?= $components->render('block/input-text', [
+    'label' => 'Telephone',
+    'attributes' => array_merge($block->getData('attributes/telephone') ?? [], [
+        'name' => 'telephone',
+    ])
+]) ?>

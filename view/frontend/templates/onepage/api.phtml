@@ -1,0 +1,257 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlResolver;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlResolver $gql */
+$gql = $block->getData('ssrGqlResolver');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOut = {
+        fn: {
+            fetchGql: async function(query, variables) {
+                const r = await fetch('/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query,
+                        variables,
+                    }),
+                });
+                return await r.json();
+            },
+            makeSsrGql: function (query, ssrVariables, refreshOnLoad = false, ssrResponse = undefined) {
+                const stub = {
+                    ssrVariables,
+                    data: ssrResponse.data,
+                    errors: ssrResponse.errors,
+                    fetch: async function (variables) {
+                        return await window.psteamJustCheckMeOut.fn.fetchGql(query, {
+                            ...this.ssrVariables,
+                            ...variables,
+                        });
+                    },
+                    refresh: async function () {
+                        const r = await this.fetch();
+                        this.data = r.data;
+                        this.errors = r.errors;
+                    }
+                };
+
+                // todo: вероятнее всего из-за вылета из контекста не тригерится обновление
+                /*if (refreshOnLoad) {
+                    stub.refresh().then(() => {
+                        stub.$refresh();
+                    })
+                }*/
+
+                return stub;
+            },
+        },
+        component: {
+            createQuoteAddressForm: function () {
+                <?php const SHIPPING_ADDRESSES_GQL = <<<GRAPHQL
+query shippingAddresses(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    email
+    shipping_addresses {
+      firstname
+      lastname
+      telephone
+    }
+  }
+}
+GRAPHQL; ?>
+                return {
+                    init: function () {
+                        this.$watch('addressGqlWrapper', () => {
+                            let address = this.addressGqlWrapper?.data?.cart?.shipping_addresses;
+                            address = Array.isArray(address) && address.length > 0 ? address[0] : null;
+
+                            this.formData = {
+                                email: this.addressGqlWrapper?.data?.cart?.email ?? '',
+                                firstname: address?.firstname ?? '',
+                                lastname: address?.lastname ?? '',
+                                telephone: address?.telephone ?? '',
+                            };
+                        });
+                    },
+                    addressGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_ADDRESSES_GQL, [
+                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+                    ]) ?>,
+                    formData: {
+                        email: '',
+                        firstname: '',
+                        lastname: '',
+                        telephone: '',
+                    },
+                    save: function () {
+                        // Save the address
+                    }
+                };
+            },
+            createShippingMethodList: function () {
+                <?php const SHIPPING_METHODS_LIST_GQL = <<<GRAPHQL
+query shippingMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    shipping_addresses {
+      available_shipping_methods {
+        carrier_code
+        carrier_title
+        method_code
+        method_title
+        price_incl_tax {
+          currency
+          value
+        }
+      }
+      selected_shipping_method {
+        carrier_code
+        method_code
+        carrier_title
+        method_title
+      }
+    }
+  }
+}
+GRAPHQL;
+
+                const SET_SHIPPING_METHOD_GQL = <<<GRAPHQL
+mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: String!){
+  setShippingMethodsOnCart(input: {
+    cart_id: \$card_id,
+    shipping_methods: [{
+      carrier_code: \$carrier,
+      method_code: \$method
+    }]
+  }){
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+        }
+      }
+    }
+  }
+}
+GRAPHQL;
+?>
+
+                return {
+                    methodsGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_METHODS_LIST_GQL, [
+                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+                    ]) ?>,
+                    addressFromGqlData: function() {
+                        const addresses = this.methodsGqlWrapper?.data?.cart?.shipping_addresses;
+                        return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
+                    },
+                    methodsAvailable: function () {
+                        return this.addressFromGqlData()?.available_shipping_methods;
+                    },
+                    currentMethod: function () {
+                        const address = this.addressFromGqlData();
+                        return address?.selected_shipping_method?.carrier_code + '_' + address?.selected_shipping_method?.method_code;
+                    },
+                    selectMethod: async function (method) {
+                        await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
+                            card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
+                            carrier: method.carrier_code,
+                            method: method.method_code,
+                        });
+                        await this.methodsGqlWrapper.refresh();
+                    }
+                };
+            },
+            createPaymentMethodList: function () {
+                <?php const PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
+query paymentMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    available_payment_methods {
+      code
+      title
+    }
+    selected_payment_method {
+      code
+      title
+    }
+  }
+}
+GRAPHQL;
+
+                const SET_PAYMENT_METHOD_GQL = <<<GRAPHQL
+mutation setPaymentMethod(\$card_id: String!, \$code: String!){
+  setPaymentMethodOnCart(input: {
+    cart_id: \$card_id,
+    payment_method: {
+      code: \$code
+    }
+  }){
+    cart {
+      selected_payment_method {
+        code
+        title
+      }
+    }
+  }
+}
+GRAPHQL;
+?>
+
+                return {
+                    methodsGqlWrapper: <?= $gql->createJsSnippet(PAYMENT_METHODS_LIST_GQL, [
+                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+                    ]) ?>,
+                    methodsAvailable: function () {
+                        return this.methodsGqlWrapper?.data?.cart?.available_payment_methods ?? [];
+                    },
+                    currentMethod: function () {
+                        const selected = this.methodsGqlWrapper?.data?.cart?.selected_payment_method;
+                        return selected?.code;
+                    },
+                    selectMethod: async function (method) {
+                        await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
+                            card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
+                            code: method.code,
+                        });
+                        await this.methodsGqlWrapper.refresh();
+                    }
+                };
+            },
+            createPlaceOrder: function(cartId = null) {
+                <?php const PLACE_ORDER_GQL = <<<GRAPHQL
+mutation placeOrder(\$card_id: String!) {
+  placeOrder(input: { cart_id: \$card_id }) {
+    order {
+      order_number
+    }
+  }
+}
+GRAPHQL;
+?>
+
+                return {
+                    cartId: cartId ?? null, // todo: resolve from storage
+                    place: async function () {
+                        return (await window.psteamJustCheckMeOut.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
+                            card_id: cartId,
+                        })).data.placeOrder.order.order_number;
+                    }
+                };
+            }
+        }
+    };
+</script>

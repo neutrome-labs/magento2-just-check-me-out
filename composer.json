@@ -1,0 +1,33 @@
+{
+    "name": "perspectiveteam/module-just-check-me-out",
+    "version": "0.0.0",
+    "description": "",
+    "type": "magento2-module",
+    "require": {
+        "magento/framework": "*",
+        "magento/module-checkout": "*"
+    },
+    "license": [
+        "Proprietary"
+    ],
+    "autoload": {
+        "files": [
+            "src/ReviewTree/registration.php"
+        ],
+        "psr-4": {
+            "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/"
+        }
+    },
+    "repositories": {
+        "0": {
+            "type": "composer",
+            "url": "https://repo.magento.com/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "magento/composer-dependency-version-audit-plugin": true,
+            "magento/magento-composer-installer": false
+        }
+    }
+}

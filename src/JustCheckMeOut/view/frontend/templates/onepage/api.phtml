@@ -76,28 +76,27 @@ query shippingAddresses(\$cart_id: String!) {
 }
 GRAPHQL; ?>
                 return {
-                    init: function () {
-                        this.$watch('addressGqlWrapper', () => {
-                            let address = this.addressGqlWrapper?.data?.cart?.shipping_addresses;
-                            address = Array.isArray(address) && address.length > 0 ? address[0] : null;
-
-                            this.formData = {
-                                email: this.addressGqlWrapper?.data?.cart?.email ?? '',
-                                firstname: address?.firstname ?? '',
-                                lastname: address?.lastname ?? '',
-                                telephone: address?.telephone ?? '',
-                            };
-                        });
-                    },
                     addressGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_ADDRESSES_GQL, [
                         'cart_id' => $quoteViewModel->getMaskedQuoteId(),
                     ]) ?>,
-                    formData: {
-                        email: '',
-                        firstname: '',
-                        lastname: '',
-                        telephone: '',
+                    tryExtractFormDataFromGqlData: function(data) {
+                        let address = data?.cart?.shipping_addresses;
+                        address = Array.isArray(address) && address.length > 0 ? address[0] : null;
+
+                        return {
+                            email: this.addressGqlWrapper?.data?.cart?.email ?? '',
+                            firstname: address?.firstname ?? '',
+                            lastname: address?.lastname ?? '',
+                            telephone: address?.telephone ?? '',
+                        };
                     },
+                    init: function () {
+                        this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
+                        this.$watch('addressGqlWrapper', () => {
+                            this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
+                        });
+                    },
+                    formData: {},
                     save: function () {
                         // Save the address
                     }

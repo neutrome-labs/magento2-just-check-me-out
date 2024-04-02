@@ -2,7 +2,6 @@
 
 namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
 
-use Magento\Framework\GraphQl\Query\Fields as QueryFields;
 use Magento\Framework\GraphQl\Query\QueryProcessor;
 use Magento\Framework\GraphQl\Schema;
 use Magento\Framework\GraphQl\Schema\SchemaGeneratorInterface;
@@ -15,7 +14,6 @@ class SsrGraphqlResolver implements ArgumentInterface
     private ?Schema $_schema = null;
 
     public function __construct(
-        private readonly QueryFields $queryFields,
         private readonly SchemaGeneratorInterface $schemaGenerator,
         private readonly SsrGraphqlContextFactory $contextFactory,
         private readonly QueryProcessor $queryProcessor,
@@ -39,9 +37,8 @@ class SsrGraphqlResolver implements ArgumentInterface
      */
     public function resolve(string $query, array $variables = []): array
     {
-        $this->queryFields->setQuery($query, $variables); // originated in module-graphq\Contoroller\GraphQl
         return $this->queryProcessor->process(
-            $this->schemaGenerator->generate(),
+            $this->getSchema(),
             $query,
             $this->contextFactory->create(),
             $variables

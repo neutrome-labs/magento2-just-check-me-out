@@ -13,6 +13,8 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 $quoteViewModel = $block->getData('quoteViewModel');
 /** @var HeadlessComponentRenderer $components */
 $components = $block->getData('headlessComponentRenderer');
+
+$radioListKey = uniqid('shipping_method_');
 ?>
 
 <form action="#" x-data="window.psteamJustCheckMeOut.component.createShippingMethodList()">
@@ -21,7 +23,7 @@ $components = $block->getData('headlessComponentRenderer');
         'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
     ]) ?>
     <?= $components->render('block/radio-list-with-details', [
-        'key' => 'shipping_method_rand(6)',
+        'key' => $radioListKey,
         'alpine' => [
             'expr' => [
                 'items' => 'methodsAvailable()',
@@ -33,5 +35,5 @@ $components = $block->getData('headlessComponentRenderer');
                 'select' => 'await selectMethod',
             ]
         ]
-    ]) ?>
+    ], 'justcheckmeout.onepage.shipping-method-list.list') ?>
 </form>

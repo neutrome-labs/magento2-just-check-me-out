@@ -17,25 +17,25 @@ $components = $block->getData('headlessComponentRenderer');
     'attributes' => array_merge($block->getData('attributes/email') ?? [], [
         'name' => 'email',
     ])
-]) ?>
+], 'justcheckmeout.onepage.address-fieldset.input-email') ?>
 
 <?= $components->render('block/input-text', [
     'label' => 'First Name',
     'attributes' => array_merge($block->getData('attributes/firstname') ?? [], [
         'name' => 'firstname',
     ])
-]) ?>
+], 'justcheckmeout.onepage.address-fieldset.input-firstname') ?>
 
 <?= $components->render('block/input-text', [
     'label' => 'Last Name',
     'attributes' => array_merge($block->getData('attributes/lastname') ?? [], [
         'name' => 'lastname',
     ])
-]) ?>
+], 'justcheckmeout.onepage.address-fieldset.input-lastname') ?>
 
 <?= $components->render('block/input-text', [
     'label' => 'Telephone',
     'attributes' => array_merge($block->getData('attributes/telephone') ?? [], [
         'name' => 'telephone',
     ])
-]) ?>
+], 'justcheckmeout.onepage.address-fieldset.input-telephone') ?>

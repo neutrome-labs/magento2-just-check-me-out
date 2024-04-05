@@ -7,18 +7,26 @@
 5. no magic. все явно викликається з кінцевих точок
 
 # Документація
-
 ```
 src/JustCheckMeOut/
+├── Api
+│   └── AdditionalViewInterface.php # інтерфейс для реєстрації додаткових форм шипінг- пеймент-методів
 ├── Controller
 │   └── Onepage
 │       └── Index.php
 ├── etc
 │   ├── frontend
 │   │   └── routes.xml
-│   └── module.xml
-├── Model
-│   └── SsrGraphqlContextFactory.php # внутрішня реалізація SSR GraphQl / конструктор контексту
+│   ├── module.xml
+│   └── schema.graphqls # додає поле з хтмл-кодом додаткових форм методів
+├── Model # внутрішня реалізація всяких штук
+│   ├── Resolver
+│   │   └── PaymentMethodDetails.php
+│   ├── AdditionalView.php
+│   └── SsrGraphqlContextFactory.php
+├── Service
+│   ├── AdditionalViewRenderer.php # рендерить додаткові форми шипінг- пеймент-методів
+│   └── PaymentMethodAdditionalViewRegistry.php # реєстр додаткових форм для розширення
 ├── view
 │   └── frontend
 │       ├── layout
@@ -39,15 +47,29 @@ src/JustCheckMeOut/
 │           │   ├── place-button.phtml # ...
 │           │   ├── shipping-method-list.phtml
 │           │   └── totals.phtml
-│           └── onepage # компоненти саме onepage
-│               ├── api.phtml # js-частини алпайн-компонентів
-│               ├── main.phtml # єдиний шаблон onepage
-│               └── script-alpine.phtml # скрипт алпайну для нон-хіва тем
+│           ├── onepage
+│           │   └── main.phtml # єдиний шаблон onepage
+│           ├── api.phtml # js-частини алпайн-компонентів
+│           └── script-alpine.phtml # скрипти алпайну
 ├── ViewModel
 │   ├── HeadlessComponentRenderer.php # 1 метод ::render(...) - рендерить headless компоненти
 │   ├── QuoteViewModel.php # в'юмодель для корзини
 │   └── SsrGraphqlResolver.php # допомагає вставляти SSR GraphQl виклики в js-компоненти
 └── registration.php
 
-16 directories, 23 files
+19 directories, 29 files
+```
+
+```
+src/JustCheckMeOutWithStripe/
+├── etc
+│   ├── di.xml # реєструє додатковий блок для пейменту
+│   └── module.xml
+├── view
+│   └── frontend
+│       └── templates
+│           └── details.phtml # додатковий блок для пейменту: ініціалізує форму та проводить кастомний плейс
+└── registration.php
+
+5 directories, 4 files
 ```

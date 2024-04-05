@@ -53,7 +53,6 @@ class SsrGraphqlResolver implements ArgumentInterface
 window.psteamJustCheckMeOut.fn.makeSsrGql(
     `$query`,
     $ssrVariables,
-    false,
     $ssrResponse
 )
 JS;

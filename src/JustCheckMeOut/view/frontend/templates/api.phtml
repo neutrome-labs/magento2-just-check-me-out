@@ -16,10 +16,48 @@ $gql = $block->getData('ssrGqlResolver');
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
-<script>
+<script id="psteam-justcheckmeout-api-script">
     window.psteamJustCheckMeOut = {
+        globals: {
+            _: {
+                placeOrderHooks: {},
+            },
+            registerJsPlaceOrderHook: function (paymentMethodCode, handler) {
+                window.psteamJustCheckMeOut.globals._.placeOrderHooks[paymentMethodCode] = handler;
+            },
+            getJsPlaceOrderHook: function (paymentMethodCode) {
+                return window.psteamJustCheckMeOut.globals._.placeOrderHooks[paymentMethodCode];
+            }
+        },
+        bus: {
+            _el: document.getElementById('psteam-justcheckmeout-api-script'),
+            on: function (event, callback) {
+                const nativeCallback = async (e) => {
+                    await callback(e.detail.payload);
+                };
+
+                window.psteamJustCheckMeOut
+                    .bus
+                    ._el
+                    .addEventListener(`psteam_justcheckmeout_inner_${event}`, nativeCallback);
+                return () => window.psteamJustCheckMeOut
+                    .bus
+                    ._el
+                    .removeEventListener(`psteam_justcheckmeout_inner_${event}`, nativeCallback);
+            },
+            fire: function (event, payload) {
+                window.psteamJustCheckMeOut
+                    .bus
+                    ._el
+                    .dispatchEvent(new CustomEvent(`psteam_justcheckmeout_inner_${event}`, {
+                        detail: {
+                            payload,
+                        }
+                    }));
+            }
+        },
         fn: {
-            fetchGql: async function(query, variables) {
+            fetchGql: async function (query, variables = {}) {
                 const r = await fetch('/graphql', {
                     method: 'POST',
                     headers: {
@@ -33,11 +71,11 @@ $quoteViewModel = $block->getData('quoteViewModel');
                 });
                 return await r.json();
             },
-            makeSsrGql: function (query, ssrVariables, refreshOnLoad = false, ssrResponse = undefined) {
-                const stub = {
+            makeSsrGql: function (query, ssrVariables, ssrResponse = undefined) {
+                return {
                     ssrVariables,
-                    data: ssrResponse.data,
-                    errors: ssrResponse.errors,
+                    data: ssrResponse?.data,
+                    errors: ssrResponse?.errors,
                     fetch: async function (variables) {
                         return await window.psteamJustCheckMeOut.fn.fetchGql(query, {
                             ...this.ssrVariables,
@@ -50,15 +88,6 @@ $quoteViewModel = $block->getData('quoteViewModel');
                         this.errors = r.errors;
                     }
                 };
-
-                // todo: вероятнее всего из-за вылета из контекста не тригерится обновление
-                /*if (refreshOnLoad) {
-                    stub.refresh().then(() => {
-                        stub.$refresh();
-                    })
-                }*/
-
-                return stub;
             },
         },
         component: {
@@ -79,7 +108,8 @@ GRAPHQL; ?>
                     addressGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_ADDRESSES_GQL, [
                         'cart_id' => $quoteViewModel->getMaskedQuoteId(),
                     ]) ?>,
-                    tryExtractFormDataFromGqlData: function(data) {
+                    formData: {},
+                    tryExtractFormDataFromGqlData: function (data) {
                         let address = data?.cart?.shipping_addresses;
                         address = Array.isArray(address) && address.length > 0 ? address[0] : null;
 
@@ -96,9 +126,9 @@ GRAPHQL; ?>
                             this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
                         });
                     },
-                    formData: {},
-                    save: function () {
-                        // Save the address
+                    save: async function () {
+                        // todo: save the address
+                        window.psteamJustCheckMeOut.bus.fire('state.set.address-form', this.formData);
                     }
                 };
             },
@@ -148,13 +178,18 @@ mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: Str
   }
 }
 GRAPHQL;
-?>
+                ?>
 
                 return {
+                    init: function () {
+                        window.psteamJustCheckMeOut.bus.on('state.set.address', async payload => {
+                            await this.methodsGqlWrapper.refresh();
+                        });
+                    },
                     methodsGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_METHODS_LIST_GQL, [
                         'cart_id' => $quoteViewModel->getMaskedQuoteId(),
                     ]) ?>,
-                    addressFromGqlData: function() {
+                    addressFromGqlData: function () {
                         const addresses = this.methodsGqlWrapper?.data?.cart?.shipping_addresses;
                         return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
                     },
@@ -172,6 +207,7 @@ GRAPHQL;
                             method: method.method_code,
                         });
                         await this.methodsGqlWrapper.refresh();
+                        window.psteamJustCheckMeOut.bus.fire('state.set.shipping-method', this.currentMethod());
                     }
                 };
             },
@@ -182,10 +218,10 @@ query paymentMethodsAvailable(\$cart_id: String!) {
     available_payment_methods {
       code
       title
+      details_html
     }
     selected_payment_method {
       code
-      title
     }
   }
 }
@@ -201,16 +237,21 @@ mutation setPaymentMethod(\$card_id: String!, \$code: String!){
   }){
     cart {
       selected_payment_method {
-        code
-        title
+        purchase_order_number
       }
     }
   }
 }
 GRAPHQL;
-?>
+                ?>
 
                 return {
+                    interactive: true,
+                    init: function () {
+                        window.psteamJustCheckMeOut.bus.on('state.set.address', async payload => {
+                            await this.methodsGqlWrapper.refresh();
+                        });
+                    },
                     methodsGqlWrapper: <?= $gql->createJsSnippet(PAYMENT_METHODS_LIST_GQL, [
                         'cart_id' => $quoteViewModel->getMaskedQuoteId(),
                     ]) ?>,
@@ -222,15 +263,22 @@ GRAPHQL;
                         return selected?.code;
                     },
                     selectMethod: async function (method) {
-                        await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
-                            card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
-                            code: method.code,
-                        });
-                        await this.methodsGqlWrapper.refresh();
+                        try {
+                            this.interactive = false;
+
+                            await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
+                                card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
+                                code: method.code,
+                            });
+                            await this.methodsGqlWrapper.refresh();
+                            window.psteamJustCheckMeOut.bus.fire('state.set.payment-method', this.currentMethod());
+                        } finally {
+                            this.interactive = true;
+                        }
                     }
                 };
             },
-            createPlaceOrder: function(cartId = null) {
+            createPlaceOrder: function (cartId) {
                 <?php const PLACE_ORDER_GQL = <<<GRAPHQL
 mutation placeOrder(\$card_id: String!) {
   placeOrder(input: { cart_id: \$card_id }) {
@@ -240,14 +288,40 @@ mutation placeOrder(\$card_id: String!) {
   }
 }
 GRAPHQL;
-?>
+                ?>
 
                 return {
-                    cartId: cartId ?? null, // todo: resolve from storage
+                    cartId: cartId, // todo: ?? resolve from localStorage
+                    currentPaymentMethodCode: '<?= $quoteViewModel->getQuote()->getPayment()->getMethod() ?>',
+                    init: function() {
+                        window.psteamJustCheckMeOut.bus.on('state.set.payment-method', payload => {
+                            this.currentPaymentMethodCode = payload;
+                        })
+                    },
                     place: async function () {
-                        return (await window.psteamJustCheckMeOut.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
-                            card_id: cartId,
-                        })).data.placeOrder.order.order_number;
+                        const hook = window.psteamJustCheckMeOut.globals.getJsPlaceOrderHook(this.currentPaymentMethodCode);
+                        const result = hook !== undefined
+                            ? await hook(this)
+                            : {
+                                preventDefault: false,
+                                orderNumber: undefined,
+                                errorMessage: undefined,
+                            };
+
+                        if (!result.preventDefault) {
+                            result.orderNumber = (await window.psteamJustCheckMeOut.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
+                                card_id: this.cartId,
+                            })).data.placeOrder.order.order_number;
+                        }
+
+                        return result;
+                    },
+                    getNextUrl: async function () {
+                        return `/checkout/onepage/success`;
+                    },
+                    placeAndGoNext: async function () {
+                        await this.place();
+                        window.location.href = await this.getNextUrl();
                     }
                 };
             }

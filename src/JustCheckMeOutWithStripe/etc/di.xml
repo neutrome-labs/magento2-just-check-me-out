@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <virtualType name="stripePaymentAdditionalView" type="PerspectiveTeam\JustCheckMeOut\Model\AdditionalView">
+        <arguments>
+            <argument name="kind" xsi:type="string">block</argument>
+            <argument name="argument" xsi:type="array">
+                <item name="template" xsi:type="string">PerspectiveTeam_JustCheckMeOutWithStripe::details.phtml</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="PerspectiveTeam\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry">
+        <arguments>
+            <argument name="items" xsi:type="array">
+                <item name="stripe_payments" xsi:type="object">stripePaymentAdditionalView</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

@@ -1,0 +1,184 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+
+// todo: 1 в 1 копипаста с примера из оф модуля
+?>
+
+<div id="payment-element"></div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    var stripe = null;
+    var elements = null;
+    var paymentElement = null;
+    var paymentMethod = null;
+    var stripeVariables = null;
+    var moduleConfigurationQuery = 'query { getModuleConfiguration {\n' +
+        '        apiKey\n' +
+        '        locale\n' +
+        '        appInfo\n' +
+        '        options {\n' +
+        '            betas\n' +
+        '            apiVersion\n' +
+        '        }\n' +
+        '    } }';
+
+    var initStripe = function () {
+        if (stripe !== null) {
+            return;
+        }
+        stripe = Stripe(stripeVariables.apiKey, {
+            betas: stripeVariables.options.betas
+        });
+    };
+
+    var initPaymentElement = function () {
+        initStripe();
+
+        var options = {
+            mode: 'payment',
+            amount: parseInt((parseFloat('<?= $quoteViewModel->getQuote()->getGrandTotal() ?>')*100).toString()),
+            currency: 'gbp',
+            // Fully customizable with appearance API.
+            appearance: {/*...*/},
+            paymentMethodCreation: "manual"
+        };
+
+        // Set up Stripe.js and Elements to use in checkout form
+        elements = stripe.elements(options);
+
+        // Create and mount the Payment Element
+        paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+    };
+
+    var getStripeModuleConfiguration = function () {
+        window.psteamJustCheckMeOut.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
+            stripeVariables = response.data.getModuleConfiguration;
+            initPaymentElement();
+        });
+    };
+
+    getStripeModuleConfiguration();
+
+    var createPaymentMethod = async function () {
+        await elements.submit();
+        const result = await stripe.createPaymentMethod({
+            elements: elements,
+            params: {
+                billing_details: {
+                    name: '<?= $quoteViewModel->getQuote()->getBillingAddress()->getFirstname() ?>'
+                }
+            }
+        });
+        if (result && result.paymentMethod) {
+            paymentMethod = result.paymentMethod;
+        }
+    };
+
+    var getPaymentMethodId = function () {
+        if (paymentMethod && paymentMethod.id) {
+            return paymentMethod.id;
+        } else {
+            return "pm_card_visa";
+        }
+    };
+
+    var isSuccessful = function (paymentIntent) {
+        if (paymentIntent.status == "succeeded") {
+            // The payment was captured automatically
+            return true;
+        }
+
+        if (paymentIntent.status == "requires_capture") {
+            // The authorization succeeded and the payment needs to be captured manually
+            return true;
+        }
+
+        return false;
+    };
+
+    window.psteamJustCheckMeOut.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
+        await createPaymentMethod();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const response = await window.psteamJustCheckMeOut.fn.fetchGql(`mutation {
+    setPaymentMethodOnCart(input: {
+      cart_id: "${placeOrderComponent.cartId}"
+      payment_method: {
+        code: "stripe_payments"
+        stripe_payments: {
+          payment_element: true
+          payment_method: "${getPaymentMethodId()}"
+          save_payment_method: true
+        }
+      }
+  }) {
+    cart {
+      selected_payment_method {
+        code
+      }
+    }
+  }
+  placeOrder(input: {cart_id: "${placeOrderComponent.cartId}"}) {
+    order {
+      order_number
+      client_secret
+    }
+  }
+}`);
+        const xresult = {
+            preventDefault: true,
+            orderNumber: undefined,
+            errorMessage: undefined,
+        };
+
+        if (response && response.data && response.data.placeOrder && response.data.placeOrder.order && response.data.placeOrder.order.client_secret) {
+            xresult.orderNumber = response.data.placeOrder.order.order_number;
+
+            await stripe.retrievePaymentIntent(response.data.placeOrder.order.client_secret).then(function (result) {
+                if (result.error) {
+                    alert(JSON.stringify(result, null, 2));
+                } else if (result.paymentIntent) {
+                    if (result.paymentIntent.status == "requires_action") {
+                        stripe.handleNextAction({
+                            clientSecret: response.data.placeOrder.order.client_secret
+                        }).then(function (result) {
+                            if (result && result.paymentIntent) {
+                                if (isSuccessful(result.paymentIntent)) {
+                                    alert("Success, you can redirect the customer to the order success page.");
+                                } else {
+                                    alert("Payment failed, the PaymentIntent has a status of " + result.paymentIntent.status);
+                                }
+                            } else {
+                                alert(JSON.stringify(result, null, 2));
+                            }
+                        });
+                    } else if (isSuccessful(result.paymentIntent)) {
+                        alert("Success, you can redirect the customer to the order success page.");
+                    } else {
+                        alert("Unhandled PaymentIntent status " + result.paymentIntent.status);
+                    }
+                } else {
+                    // API call crashed
+                    alert(JSON.stringify(result, null, 2));
+                }
+            });
+        }
+
+        return xresult;
+    })
+</script>

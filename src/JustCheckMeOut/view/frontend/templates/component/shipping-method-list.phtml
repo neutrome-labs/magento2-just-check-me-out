@@ -30,10 +30,8 @@ $radioListKey = uniqid('shipping_method_');
                 'value' => '`${item.carrier_code}_${item.method_code}`',
                 'current' => 'currentMethod()',
                 'label' => '`${item.carrier_title} ${item.method_title} - ${item.price_incl_tax.value} ${item.price_incl_tax.currency}`',
+                'select' => 'await selectMethod(item)',
             ],
-            'fn' => [
-                'select' => 'await selectMethod',
-            ]
         ]
     ], 'justcheckmeout.onepage.shipping-method-list.list') ?>
 </form>

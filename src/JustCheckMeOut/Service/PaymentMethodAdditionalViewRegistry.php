@@ -1,0 +1,23 @@
+<?php
+
+namespace PerspectiveTeam\JustCheckMeOut\Service;
+
+use PerspectiveTeam\JustCheckMeOut\Api\AdditionalViewInterface;
+
+class PaymentMethodAdditionalViewRegistry
+{
+
+    /**
+     * @param array<string, AdditionalViewInterface> $items
+     */
+    public function __construct(
+        private readonly array $items = []
+    )
+    {
+    }
+
+    public function get(string $code): ?AdditionalViewInterface
+    {
+        return array_key_exists($code, $this->items) ? $this->items[$code] : null;
+    }
+}

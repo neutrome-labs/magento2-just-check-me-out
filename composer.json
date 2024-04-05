@@ -12,10 +12,13 @@
     ],
     "autoload": {
         "files": [
-            "src/ReviewTree/registration.php"
+            "src/JustCheckMeOut/registration.php",
+            "src/JustCheckMeOutWithStripe/registration.php"
         ],
         "psr-4": {
-            "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/"
+            "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/",
+            "PerspectiveTeam\\JustCheckMeOutWithStripe\\": "src/JustCheckMeOutWithStripe/"
+
         }
     },
     "repositories": {

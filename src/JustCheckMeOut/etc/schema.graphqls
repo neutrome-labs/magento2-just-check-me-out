@@ -1,0 +1,7 @@
+type AvailablePaymentMethod {
+    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodDetails")
+}
+
+type SelectedPaymentMethod @doc(description: "Describes the payment method the shopper selected.") {
+    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodDetails")
+}

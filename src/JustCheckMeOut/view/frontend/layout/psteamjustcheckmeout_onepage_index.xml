@@ -6,11 +6,11 @@
         <referenceContainer name="before.body.end">
             <block class="Magento\Framework\View\Element\Template"
                    name="checkout.onepage.script-alpine"
-                   template="PerspectiveTeam_JustCheckMeOut::onepage/script-alpine.phtml">
+                   template="PerspectiveTeam_JustCheckMeOut::script-alpine.phtml">
             </block>
             <block class="Magento\Framework\View\Element\Template"
                    name="checkout.onepage.api"
-                   template="PerspectiveTeam_JustCheckMeOut::onepage/api.phtml">
+                   template="PerspectiveTeam_JustCheckMeOut::api.phtml">
                 <arguments>
                     <argument name="ssrGqlResolver"
                               xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlResolver
@@ -107,5 +107,6 @@
                 </block>
             </block>
         </referenceContainer>
+        <container name="checkout.onepage.additional-views"/>
     </body>
 </page>

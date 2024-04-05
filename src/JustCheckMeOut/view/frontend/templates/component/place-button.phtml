@@ -18,6 +18,6 @@ $components = $block->getData('headlessComponentRenderer');
 <div x-data="window.psteamJustCheckMeOut.component.createPlaceOrder('<?= $quoteViewModel->getMaskedQuoteId() ?>')">
     <?= $components->render('atom/button', [
         'text' => 'Place Order',
-        'attributes' => ['type' => 'button', '@click' => 'alert(`ok! - ${await place()}`)']
+        'attributes' => ['type' => 'button', '@click' => 'await placeAndGoNext()']
     ]) ?>
 </div>

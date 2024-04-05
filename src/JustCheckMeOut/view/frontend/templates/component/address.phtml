@@ -45,6 +45,6 @@ $address = $quote->getShippingAddress();
     ]) ?>
     <?= $components->render('atom/button', [
         'text' => '[dev] save explicitly',
-        'attributes' => ['type' => 'button', '@click' => '']
+        'attributes' => ['type' => 'button', '@click' => 'await save()']
     ]) ?>
 </form>

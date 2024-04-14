@@ -8,30 +8,60 @@ use Magento\Framework\View\Element\Template;
 /** @var Escaper $escaper */
 ?>
 
-<div style="display: flex; gap: 10px;"
-     class="psteam_justcheckmeout">
-    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
-         class="psteam_justcheckmeout__address">
+<style>
+    .psteam_justcheckmeout {
+        font-family: Arial, sans-serif;
+        display: flex;
+        gap: 10px;
+    }
+
+    .psteam_justcheckmeout__customer {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 5px;
+    }
+
+    .psteam_justcheckmeout__methods {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 5px;
+    }
+
+    .psteam_justcheckmeout__methods__shipping {
+        flex: 1;
+    }
+
+    .psteam_justcheckmeout__methods__payment {
+        flex: 1;
+    }
+
+    .psteam_justcheckmeout__place {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 5px;
+    }
+</style>
+<div class="psteam_justcheckmeout">
+    <div class="psteam_justcheckmeout__customer">
         <h2>Customer</h2>
-        <?= $block->getChildHtml('address') ?>
+        <?= $block->getChildHtml('unified-address-form') ?>
     </div>
 
-    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
-         class="psteam_justcheckmeout__methods">
-        <div style="flex: 1;"
-             class="psteam_justcheckmeout__methods__shipping">
+    <div class="psteam_justcheckmeout__methods">
+        <div class="psteam_justcheckmeout__methods__shipping">
             <h2>Shipping Method</h2>
             <?= $block->getChildHtml('shipping-method-list') ?>
         </div>
-        <div style="flex: 1;"
-             class="psteam_justcheckmeout__methods__payment">
+        <div class="psteam_justcheckmeout__methods__payment">
             <h2>Payment Method</h2>
             <?= $block->getChildHtml('payment-method-list') ?>
         </div>
     </div>
 
-    <div style="flex: 1; display: flex; flex-direction: column; padding: 5px;"
-         class="psteam_justcheckmeout__place">
+    <div class="psteam_justcheckmeout__place">
         <h2>Order</h2>
         <?= $block->getChildHtml('items') ?>
         <?= $block->getChildHtml('totals') ?>

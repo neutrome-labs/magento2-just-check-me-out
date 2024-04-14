@@ -3,328 +3,101 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlResolver;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
 
-/** @var SsrGraphqlResolver $gql */
-$gql = $block->getData('ssrGqlResolver');
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
 
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
+
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+
+$scriptTagId = uniqid('psteam-justcheckmeout-api-script_');
 ?>
 
-<script id="psteam-justcheckmeout-api-script">
-    window.psteamJustCheckMeOut = {
-        globals: {
+<script id="<?= $scriptTagId ?>">
+    window.psteamJustCheckMeOutApiV1 = {
+        globals: { // todo: via alpinejs::$store
             _: {
                 placeOrderHooks: {},
             },
             registerJsPlaceOrderHook: function (paymentMethodCode, handler) {
-                window.psteamJustCheckMeOut.globals._.placeOrderHooks[paymentMethodCode] = handler;
+                window.psteamJustCheckMeOutApiV1.globals._.placeOrderHooks[paymentMethodCode] = handler;
             },
             getJsPlaceOrderHook: function (paymentMethodCode) {
-                return window.psteamJustCheckMeOut.globals._.placeOrderHooks[paymentMethodCode];
+                return window.psteamJustCheckMeOutApiV1.globals._.placeOrderHooks[paymentMethodCode];
             }
         },
         bus: {
-            _el: document.getElementById('psteam-justcheckmeout-api-script'),
+            _el: document.getElementById("<?= $scriptTagId ?>"),
             on: function (event, callback) {
                 const nativeCallback = async (e) => {
                     await callback(e.detail.payload);
                 };
 
-                window.psteamJustCheckMeOut
+                window.psteamJustCheckMeOutApiV1
                     .bus
                     ._el
-                    .addEventListener(`psteam_justcheckmeout_inner_${event}`, nativeCallback);
-                return () => window.psteamJustCheckMeOut
+                    .addEventListener(`psteam_justcheckmeout::${event}`, nativeCallback);
+                return () => window.psteamJustCheckMeOutApiV1
                     .bus
                     ._el
-                    .removeEventListener(`psteam_justcheckmeout_inner_${event}`, nativeCallback);
+                    .removeEventListener(`psteam_justcheckmeout::${event}`, nativeCallback);
             },
             fire: function (event, payload) {
-                window.psteamJustCheckMeOut
+                window.psteamJustCheckMeOutApiV1
                     .bus
                     ._el
-                    .dispatchEvent(new CustomEvent(`psteam_justcheckmeout_inner_${event}`, {
+                    .dispatchEvent(new CustomEvent(`psteam_justcheckmeout::${event}`, {
                         detail: {
                             payload,
                         }
                     }));
-            }
-        },
-        fn: {
-            fetchGql: async function (query, variables = {}) {
-                const r = await fetch('/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query,
-                        variables,
-                    }),
+            },
+            then: function (promise, event, callback = undefined, once = true) {
+                promise.then(async (result) => {
+                    if (!!callback) {
+                        if (once) {
+                            callback(result)
+                        } else {
+                            window.psteamJustCheckMeOutApiV1.bus.on(event, callback);
+                        }
+                    }
+                    window.psteamJustCheckMeOutApiV1.bus.fire(event, result);
                 });
-                return await r.json();
-            },
-            makeSsrGql: function (query, ssrVariables, ssrResponse = undefined) {
-                return {
-                    ssrVariables,
-                    data: ssrResponse?.data,
-                    errors: ssrResponse?.errors,
-                    fetch: async function (variables) {
-                        return await window.psteamJustCheckMeOut.fn.fetchGql(query, {
-                            ...this.ssrVariables,
-                            ...variables,
-                        });
-                    },
-                    refresh: async function () {
-                        const r = await this.fetch();
-                        this.data = r.data;
-                        this.errors = r.errors;
-                    }
-                };
-            },
-        },
-        component: {
-            createQuoteAddressForm: function () {
-                <?php const SHIPPING_ADDRESSES_GQL = <<<GRAPHQL
-query shippingAddresses(\$cart_id: String!) {
-  cart(cart_id: \$cart_id) {
-    email
-    shipping_addresses {
-      firstname
-      lastname
-      telephone
-    }
-  }
-}
-GRAPHQL; ?>
-                return {
-                    addressGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_ADDRESSES_GQL, [
-                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
-                    ]) ?>,
-                    formData: {},
-                    tryExtractFormDataFromGqlData: function (data) {
-                        let address = data?.cart?.shipping_addresses;
-                        address = Array.isArray(address) && address.length > 0 ? address[0] : null;
-
-                        return {
-                            email: this.addressGqlWrapper?.data?.cart?.email ?? '',
-                            firstname: address?.firstname ?? '',
-                            lastname: address?.lastname ?? '',
-                            telephone: address?.telephone ?? '',
-                        };
-                    },
-                    init: function () {
-                        this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
-                        this.$watch('addressGqlWrapper', () => {
-                            this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
-                        });
-                    },
-                    save: async function () {
-                        // todo: save the address
-                        window.psteamJustCheckMeOut.bus.fire('state.set.address-form', this.formData);
-                    }
-                };
-            },
-            createShippingMethodList: function () {
-                <?php const SHIPPING_METHODS_LIST_GQL = <<<GRAPHQL
-query shippingMethodsAvailable(\$cart_id: String!) {
-  cart(cart_id: \$cart_id) {
-    shipping_addresses {
-      available_shipping_methods {
-        carrier_code
-        carrier_title
-        method_code
-        method_title
-        price_incl_tax {
-          currency
-          value
-        }
-      }
-      selected_shipping_method {
-        carrier_code
-        method_code
-        carrier_title
-        method_title
-      }
-    }
-  }
-}
-GRAPHQL;
-
-                const SET_SHIPPING_METHOD_GQL = <<<GRAPHQL
-mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: String!){
-  setShippingMethodsOnCart(input: {
-    cart_id: \$card_id,
-    shipping_methods: [{
-      carrier_code: \$carrier,
-      method_code: \$method
-    }]
-  }){
-    cart {
-      shipping_addresses {
-        selected_shipping_method {
-          carrier_code
-          method_code
-        }
-      }
-    }
-  }
-}
-GRAPHQL;
-                ?>
-
-                return {
-                    init: function () {
-                        window.psteamJustCheckMeOut.bus.on('state.set.address', async payload => {
-                            await this.methodsGqlWrapper.refresh();
-                        });
-                    },
-                    methodsGqlWrapper: <?= $gql->createJsSnippet(SHIPPING_METHODS_LIST_GQL, [
-                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
-                    ]) ?>,
-                    addressFromGqlData: function () {
-                        const addresses = this.methodsGqlWrapper?.data?.cart?.shipping_addresses;
-                        return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
-                    },
-                    methodsAvailable: function () {
-                        return this.addressFromGqlData()?.available_shipping_methods;
-                    },
-                    currentMethod: function () {
-                        const address = this.addressFromGqlData();
-                        return address?.selected_shipping_method?.carrier_code + '_' + address?.selected_shipping_method?.method_code;
-                    },
-                    selectMethod: async function (method) {
-                        await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
-                            card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
-                            carrier: method.carrier_code,
-                            method: method.method_code,
-                        });
-                        await this.methodsGqlWrapper.refresh();
-                        window.psteamJustCheckMeOut.bus.fire('state.set.shipping-method', this.currentMethod());
-                    }
-                };
-            },
-            createPaymentMethodList: function () {
-                <?php const PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
-query paymentMethodsAvailable(\$cart_id: String!) {
-  cart(cart_id: \$cart_id) {
-    available_payment_methods {
-      code
-      title
-      details_html
-    }
-    selected_payment_method {
-      code
-    }
-  }
-}
-GRAPHQL;
-
-                const SET_PAYMENT_METHOD_GQL = <<<GRAPHQL
-mutation setPaymentMethod(\$card_id: String!, \$code: String!){
-  setPaymentMethodOnCart(input: {
-    cart_id: \$card_id,
-    payment_method: {
-      code: \$code
-    }
-  }){
-    cart {
-      selected_payment_method {
-        purchase_order_number
-      }
-    }
-  }
-}
-GRAPHQL;
-                ?>
-
-                return {
-                    interactive: true,
-                    init: function () {
-                        window.psteamJustCheckMeOut.bus.on('state.set.address', async payload => {
-                            await this.methodsGqlWrapper.refresh();
-                        });
-                    },
-                    methodsGqlWrapper: <?= $gql->createJsSnippet(PAYMENT_METHODS_LIST_GQL, [
-                        'cart_id' => $quoteViewModel->getMaskedQuoteId(),
-                    ]) ?>,
-                    methodsAvailable: function () {
-                        return this.methodsGqlWrapper?.data?.cart?.available_payment_methods ?? [];
-                    },
-                    currentMethod: function () {
-                        const selected = this.methodsGqlWrapper?.data?.cart?.selected_payment_method;
-                        return selected?.code;
-                    },
-                    selectMethod: async function (method) {
-                        try {
-                            this.interactive = false;
-
-                            await window.psteamJustCheckMeOut.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
-                                card_id: this.methodsGqlWrapper.ssrVariables.cart_id,
-                                code: method.code,
-                            });
-                            await this.methodsGqlWrapper.refresh();
-                            window.psteamJustCheckMeOut.bus.fire('state.set.payment-method', this.currentMethod());
-                        } finally {
-                            this.interactive = true;
-                        }
-                    }
-                };
-            },
-            createPlaceOrder: function (cartId) {
-                <?php const PLACE_ORDER_GQL = <<<GRAPHQL
-mutation placeOrder(\$card_id: String!) {
-  placeOrder(input: { cart_id: \$card_id }) {
-    order {
-      order_number
-    }
-  }
-}
-GRAPHQL;
-                ?>
-
-                return {
-                    cartId: cartId, // todo: ?? resolve from localStorage
-                    currentPaymentMethodCode: '<?= $quoteViewModel->getQuote()->getPayment()->getMethod() ?>',
-                    init: function() {
-                        window.psteamJustCheckMeOut.bus.on('state.set.payment-method', payload => {
-                            this.currentPaymentMethodCode = payload;
-                        })
-                    },
-                    place: async function () {
-                        const hook = window.psteamJustCheckMeOut.globals.getJsPlaceOrderHook(this.currentPaymentMethodCode);
-                        const result = hook !== undefined
-                            ? await hook(this)
-                            : {
-                                preventDefault: false,
-                                orderNumber: undefined,
-                                errorMessage: undefined,
-                            };
-
-                        if (!result.preventDefault) {
-                            result.orderNumber = (await window.psteamJustCheckMeOut.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
-                                card_id: this.cartId,
-                            })).data.placeOrder.order.order_number;
-                        }
-
-                        return result;
-                    },
-                    getNextUrl: async function () {
-                        return `/checkout/onepage/success`;
-                    },
-                    placeAndGoNext: async function () {
-                        await this.place();
-                        window.location.href = await this.getNextUrl();
-                    }
-                };
             }
-        }
+        },
+        fn: {},
+        component: {},
     };
 </script>
+
+<?php
+    $innerBlockData = [
+        'ssrGqlViewModel' => $gql,
+        'quoteViewModel' => $quoteViewModel,
+    ];
+
+    $innerBlocks = [
+        'fn/graphql',
+        'component/customer-email-form',
+        'component/shipping-address-form',
+        'component/unified-address-form',
+        'component/shipping-method-list',
+        'component/payment-method-list',
+        'component/place-order-button',
+    ];
+
+    foreach ($innerBlocks as $name) {
+        echo $components->render("PerspectiveTeam_JustCheckMeOut::api/$name.phtml", $innerBlockData);
+    }
+?>
+
+<?= $block->getChildHtml('checkout.onepage.api.after') ?>

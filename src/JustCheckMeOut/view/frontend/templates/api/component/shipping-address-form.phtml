@@ -1,0 +1,164 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOutApiV1.component.createQuoteShippingAddressForm = function () {
+        <?php const CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL = <<<GRAPHQL
+query customerAddresses {
+  customer {
+    default_shipping
+    addresses {
+      id
+      telephone
+      firstname
+      lastname
+      country_code
+      city
+      postcode
+      street
+    }
+  }
+}
+GRAPHQL; ?>
+
+        <?php const QUOTE_SHIPPING_ADDRESSES_GQL = <<<GRAPHQL
+query shippingAddresses(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    shipping_addresses {
+      firstname
+      lastname
+      telephone
+      country {
+        code
+      }
+      city
+      postcode
+      street
+    }
+  }
+}
+GRAPHQL; ?>
+
+        <?php const SET_SHIPPING_ADDRESS_ON_CART_GQL = <<<GRAPHQL
+mutation setShippingAddress(\$cart_id: String!, \$customer_address_id: Int, \$address: CartAddressInput) {
+  setShippingAddressesOnCart(
+    input: {
+      cart_id: \$cart_id,
+      shipping_addresses: [{
+        customer_address_id: \$customer_address_id,
+        address: \$address
+      }]
+    }
+  ) {
+    cart {
+      id
+    }
+  }
+
+  setBillingAddressOnCart(
+    input: {
+      cart_id: \$cart_id,
+      billing_address: {
+        same_as_shipping: true
+      }
+    }
+  ) {
+    cart {
+      id
+    }
+  }
+}
+GRAPHQL; ?>
+
+        return {
+            addressBookGqlWrapper: <?= $gql->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
+            addressGqlWrapper: <?= $gql->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
+                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            selectedAddressId: undefined,
+            formData: {},
+            extractFormDataFromAddressModel: function (address) {
+                return {
+                    firstname: address?.firstname ?? '',
+                    lastname: address?.lastname ?? '',
+                    telephone: address?.telephone ?? '',
+                    country_code: address?.country_code ?? address?.country?.code ?? '<?= $quoteViewModel->getQuote()->getShippingAddress()->getCountry() ?>',
+                    city: address?.city ?? '',
+                    postcode: address?.postcode ?? '',
+                    street: address?.street ?? [],
+                };
+            },
+            tryExtractFormDataFromGqlData: function (data) {
+                const addresses = data?.cart?.shipping_addresses;
+                const address = data?.cart?.shipping_addresses?.length > 0
+                    ? addresses[0]
+                    : null;
+                return this.extractFormDataFromAddressModel(address);
+            },
+            init: function () {
+                this.selectAddressFromBook(
+                    this.addressesFromAddressBook().find(
+                        a => a.id === parseInt(this.addressBookGqlWrapper?.data?.customer?.default_shipping)
+                    )
+                );
+                this.$watch('addressBookGqlWrapper', () => {
+                    this.selectAddressFromBook(
+                        this.addressesFromAddressBook().find(
+                            a => a.id === parseInt(this.addressBookGqlWrapper?.data?.customer?.default_shipping)
+                        )
+                    );
+                });
+
+                this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
+                this.$watch('addressGqlWrapper', () => {
+                    this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
+                });
+            },
+            addressesFromAddressBook: function () {
+                return this.addressBookGqlWrapper?.data?.customer?.addresses ?? [];
+            },
+            selectAddressFromBook: async function (address) {
+                if (address === undefined) {
+                    return;
+                }
+
+                if (address?.id === this.selectedAddressId) {
+                    return;
+                }
+
+                this.selectedAddressId = address?.id;
+                this.formData = this.extractFormDataFromAddressModel(address);
+            },
+            save: async function () {
+                if (!this.selectedAddressId) {
+                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                        cart_id: '<?= $quoteViewModel->getMaskedQuoteId() ?>',
+                        address: this.formData,
+                    });
+                } else {
+                    // todo: save current customer address data
+                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                        cart_id: '<?= $quoteViewModel->getMaskedQuoteId() ?>',
+                        customer_address_id: this.selectedAddressId,
+                    });
+                }
+                window.psteamJustCheckMeOutApiV1.bus.fire('state.set.shipping-address-form', this.formData);
+            }
+        };
+    }
+</script>

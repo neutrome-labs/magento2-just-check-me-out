@@ -10,49 +10,5 @@ use Magento\Framework\View\Element\Template;
 ?>
 
 <!-- hyva-theme: disabled
-<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 -->
-
-<script>
-    document.addEventListener('alpine:init', () => {
-        const nodeScriptClone = function (node) {
-            const script = document.createElement('script')
-            script.text = node.innerHTML
-
-            for (let i = 0; i < node.attributes.length; i++) {
-                const attr = node.attributes[i]
-                script.setAttribute(attr.name, attr.value)
-            }
-
-            return script
-        }
-
-        const nodeScriptReplace = function (node) {
-            if (node.tagName && node.tagName.toLowerCase() === 'script') {
-                node.parentNode.replaceChild(nodeScriptClone(node), node)
-            } else {
-                for (let i = 0; i < node.childNodes.length; i++) {
-                    nodeScriptReplace(node.childNodes[i])
-                }
-            }
-            return node
-        }
-        Alpine.directive('unsafe', (el, { expression }, { effect, evaluateLater }) => {
-            let evaluate = evaluateLater(expression)
-
-            effect(() => {
-                evaluate(value => {
-                    Alpine.mutateDom(() => {
-                        el.innerHTML = value
-                        nodeScriptReplace(el)
-
-                        el._x_ignoreSelf = true
-                        Alpine.initTree(el)
-                        delete el._x_ignoreSelf
-                    })
-                })
-            })
-        })
-    })
-</script>

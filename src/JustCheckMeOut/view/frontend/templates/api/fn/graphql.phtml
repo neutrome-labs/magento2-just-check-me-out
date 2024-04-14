@@ -1,0 +1,90 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOutApiV1.fn.fetchGql = async function (query, variables = {}) {
+        const r = await fetch('/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                query,
+                variables,
+            }),
+        });
+        return await r.json();
+    }
+
+    window.psteamJustCheckMeOutApiV1.fn.createSsrGqlStub = function (query, variables, response = undefined, options = {
+        event: undefined,
+        callback: undefined
+    }) {
+        // todo: if debug
+        if (response?.errors?.length > 0) {
+            console.error('error resolving ssr graphql response: ', {
+                query,
+                variables,
+                errors: response.errors,
+            });
+        }
+
+        return {
+            ssr: {
+                variables,
+                response,
+            },
+            fresh: false,
+            data: response?.data,
+            errors: response?.errors,
+            fetch: async function (variables) {
+                return await window.psteamJustCheckMeOutApiV1.fn.fetchGql(query, {
+                    ...this.ssr.variables,
+                    ...variables,
+                });
+            },
+            refresh: async function () {
+                const callback = async r => {
+                    this.fresh = true;
+                    this.data = r?.data;
+                    this.errors = r?.errors;
+
+                    if (options.callback) {
+                        await options.callback(r);
+                    }
+
+                    // todo: if debug
+                    if (r?.errors?.length > 0) {
+                        console.error('error resolving graphql response: ', {
+                            query,
+                            variables,
+                            errors: r.errors,
+                        });
+                    }
+                };
+
+                if (options.event?.length > 0) {
+                    window.psteamJustCheckMeOutApiV1.bus.then(this.fetch(), options.event, callback);
+                } else {
+                    await callback(await this.fetch());
+                }
+            }
+        };
+    }
+</script>

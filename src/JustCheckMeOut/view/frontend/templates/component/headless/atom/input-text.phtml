@@ -6,11 +6,13 @@ use Magento\Framework\View\Element\Template;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
+
+$attributes = $block->getData('attributes') ?? [];
+$attributes['type'] = $attributes['type'] ?? 'text';
 ?>
 
 <input
-    type="text"
-    <?php foreach ($block->getData('attributes') ?? [] as $k => $v) {
+    <?php foreach ($attributes as $k => $v) {
         echo " $k=\"$v\"";
     } ?>
 >

@@ -17,11 +17,12 @@ $components = $block->getData('headlessComponentRenderer');
 $radioListKey = uniqid('payment_method_');
 ?>
 
-<form action="#" x-data="window.psteamJustCheckMeOut.component.createPaymentMethodList()">
+<form action="#" x-data="window.psteamJustCheckMeOutApiV1.component.createPaymentMethodList()">
     <?= $components->render('atom/button', [
         'text' => '[dev] refresh',
         'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
     ]) ?>
+
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
         'alpine' => [

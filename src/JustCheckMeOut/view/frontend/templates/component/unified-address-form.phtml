@@ -1,0 +1,138 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+
+$quote = $quoteViewModel->getQuote();
+$address = $quote->getShippingAddress();
+
+$formId = uniqid('unified-address-form_');
+$addressesRadioListKey = uniqid('customer-shipping-address-')
+?>
+
+<form id="<?= $formId ?>" x-data="window.psteamJustCheckMeOutApiV1.component.createUnifiedAddressForm(
+    document.querySelector(<?= "`#$formId > div[x-ref=email]`" ?>)
+)" @submit.prevent="await save()">
+    <?= $components->render('atom/button', [
+        'text' => '[dev] refresh addresses',
+        'attributes' => ['type' => 'button', '@click' => 'await addressBookGqlWrapper.refresh()']
+    ]) ?>
+
+    <ul>
+        <template x-for="address in addressesFromAddressBook()" :key="address.id">
+            <li>
+                <span>
+                    <input type="radio"
+                           name="<?= $addressesRadioListKey ?>"
+                           :value="address.id"
+                           :checked="selectedAddressId === address.id"
+                           @click="await selectAddressFromBook(address)"
+                    />
+                    <span x-text="`#${address.id}`"></span>
+                </span>
+                <p>
+                    <span x-text="address.firstname"></span>
+                    <span x-text="address.lastname"></span>
+                </p>
+                <p>
+                    <span x-text="address.telephone"></span>
+                </p>
+                <p>
+                    <span x-text="address.city"></span>
+                    <span x-text="address.street"></span>
+                </p>
+            </li>
+        </template>
+        <li>
+            <p>
+                <input type="radio"
+                       name="<?= $addressesRadioListKey ?>"
+                       value="0"
+                       :checked="!selectedAddressId"
+                       @click="await selectAddressFromBook(null)"
+                />
+                <span>Use new address</span>
+            </p>
+        </li>
+    </ul>
+
+    <?= $components->render('atom/button', [
+        'text' => '[dev] refresh address form',
+        'attributes' => ['type' => 'button', '@click' => 'await addressGqlWrapper.refresh()']
+    ]) ?>
+
+    <div x-data="window.psteamJustCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
+        <?= $components->render('atom/button', [
+            'text' => '[dev] refresh customer data',
+            'attributes' => ['type' => 'button', '@click' => 'await emailGqlWrapper.refresh()']
+        ]) ?>
+
+        <?= $components->render('block/input-text', [
+            'label' => 'Email',
+            'attributes' => [
+                'type' => 'email',
+                'name' => 'email',
+                'required' => 1,
+                'value' => $address->getEmail(),
+                'x-model' => 'displayEmail',
+            ]
+        ], 'justcheckmeout.onepage.address-fieldset.input-email') ?>
+    </div>
+
+    <input type="hidden" x-model="formData.country_code"/>
+    <?= $components->render('block/address-fieldset', [
+        'fields' => [
+            'firstname' => [
+                'required' => 1,
+                'label' => 'First Name',
+                'value' => $address->getFirstname(),
+                'x-model' => 'formData.firstname',
+            ],
+            'lastname' => [
+                'required' => 1,
+                'label' => 'Last Name',
+                'value' => $address->getLastname(),
+                'x-model' => 'formData.lastname',
+            ],
+            'telephone' => [
+                'label' => 'Telephone',
+                'value' => $address->getTelephone(),
+                'x-model' => 'formData.telephone',
+            ],
+            'city' => [
+                'required' => 1,
+                'label' => 'City',
+                'value' => $address->getCity(),
+                'x-model' => 'formData.city',
+            ],
+            'postcode' => [
+                'required' => 1,
+                'label' => 'Postcode',
+                'value' => $address->getPostcode(),
+                'x-model' => 'formData.postcode',
+            ],
+            'street_1' => [
+                'required' => 1,
+                'label' => 'Street',
+                'value' => $address->getStreetLine(1),
+                'x-model' => 'formData.street[0]',
+            ],
+        ]
+    ]) ?>
+
+    <?= $components->render('atom/button', [
+        'text' => '[dev] save explicitly',
+        'attributes' => ['type' => 'submit']
+    ]) ?>
+</form>

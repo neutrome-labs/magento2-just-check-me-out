@@ -13,11 +13,10 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 $quoteViewModel = $block->getData('quoteViewModel');
 /** @var HeadlessComponentRenderer $components */
 $components = $block->getData('headlessComponentRenderer');
+
+// todo: 1 в 1 копипаста с примера из оф модуля
 ?>
 
-<div x-data="window.psteamJustCheckMeOutApiV1.component.createPlaceOrder()">
-    <?= $components->render('atom/button', [
-        'text' => 'Place Order',
-        'attributes' => ['type' => 'button', '@click' => 'await placeAndGoNext()']
-    ]) ?>
+<div x-init="getStripeModuleConfiguration()">
+    <div id="payment-element"></div>
 </div>

@@ -10,32 +10,12 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 
 /** @var HeadlessComponentRenderer $components */
 $components = $block->getData('headlessComponentRenderer');
-?>
 
-<?= $components->render('block/input-text', [
-    'label' => 'Email',
-    'attributes' => array_merge($block->getData('attributes/email') ?? [], [
-        'name' => 'email',
-    ])
-], 'justcheckmeout.onepage.address-fieldset.input-email') ?>
-
-<?= $components->render('block/input-text', [
-    'label' => 'First Name',
-    'attributes' => array_merge($block->getData('attributes/firstname') ?? [], [
-        'name' => 'firstname',
-    ])
-], 'justcheckmeout.onepage.address-fieldset.input-firstname') ?>
-
-<?= $components->render('block/input-text', [
-    'label' => 'Last Name',
-    'attributes' => array_merge($block->getData('attributes/lastname') ?? [], [
-        'name' => 'lastname',
-    ])
-], 'justcheckmeout.onepage.address-fieldset.input-lastname') ?>
-
-<?= $components->render('block/input-text', [
-    'label' => 'Telephone',
-    'attributes' => array_merge($block->getData('attributes/telephone') ?? [], [
-        'name' => 'telephone',
-    ])
-], 'justcheckmeout.onepage.address-fieldset.input-telephone') ?>
+foreach ($block->getData('fields') as $key => $data) {
+    echo $components->render('block/input-text', [
+        'label' => $data['label'],
+        'attributes' => array_merge(array_diff_key($data, array_flip(['label'])) ?? [], [
+            'name' => $key,
+        ])
+    ], 'justcheckmeout.onepage.address-fieldset.input-' . $key);
+}

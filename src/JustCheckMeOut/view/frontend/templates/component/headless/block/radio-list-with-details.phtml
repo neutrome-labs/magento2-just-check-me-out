@@ -28,9 +28,8 @@ $components = $block->getData('headlessComponentRenderer');
             <span x-text="<?= $block->getData('alpine/expr/label') ?>"></span>
         </p>
         <?php if ($block->getData('alpine/expr/detail')): ?>
-            <template
-                x-if="<?= $block->getData('alpine/expr/current') ?> === <?= $block->getData('alpine/expr/value') ?>">
-                <div x-unsafe="<?= $block->getData('alpine/expr/detail') ?>"></div>
+            <template x-if="<?= $block->getData('alpine/expr/current') ?> === <?= $block->getData('alpine/expr/value') ?>">
+                <div x-html="<?= $block->getData('alpine/expr/detail') ?>"></div>
             </template>
         <?php endif; ?>
     </div>

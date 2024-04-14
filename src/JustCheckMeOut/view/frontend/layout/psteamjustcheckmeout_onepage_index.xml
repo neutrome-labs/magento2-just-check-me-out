@@ -12,13 +12,17 @@
                    name="checkout.onepage.api"
                    template="PerspectiveTeam_JustCheckMeOut::api.phtml">
                 <arguments>
-                    <argument name="ssrGqlResolver"
-                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlResolver
+                    <argument name="ssrGqlViewModel"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel
                     </argument>
                     <argument name="quoteViewModel"
                               xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
                     </argument>
+                    <argument name="headlessComponentRenderer"
+                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer
+                    </argument>
                 </arguments>
+                <container name="checkout.onepage.api.after"/>
             </block>
         </referenceContainer>
         <referenceContainer name="content">
@@ -34,8 +38,8 @@
                     </argument>
                 </arguments>
                 <block class="Magento\Framework\View\Element\Template"
-                       name="checkout.onepage.address" as="address"
-                       template="PerspectiveTeam_JustCheckMeOut::component/address.phtml">
+                       name="checkout.onepage.address-form" as="unified-address-form"
+                       template="PerspectiveTeam_JustCheckMeOut::component/unified-address-form.phtml">
                     <arguments>
                         <argument name="quoteViewModel"
                                   xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel
@@ -107,6 +111,5 @@
                 </block>
             </block>
         </referenceContainer>
-        <container name="checkout.onepage.additional-views"/>
     </body>
 </page>

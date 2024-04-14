@@ -1,0 +1,81 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOutApiV1.component.createCustomerEmailForm = function () {
+        <?php const UNIFIED_EMAIL_GQL = <<<GRAPHQL
+query unifiedEmail(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    email
+  }
+  customer {
+    email
+  }
+}
+GRAPHQL; ?>
+
+        <?php const SET_GUEST_EMAIL_ON_CART_GQL = <<<GRAPHQL
+mutation setGuestEmailOnCart(\$cart_id: String!, \$email: String!) {
+  setGuestEmailOnCart(input: {
+    cart_id: \$cart_id,
+    email: \$email
+  }){
+    cart {
+      email
+    }
+  }
+}
+GRAPHQL; ?>
+
+        return {
+            init: function () {
+                this.$watch('emailGqlWrapper', () => {
+                    this.displayEmail = this.cartEmail() || this.customerEmail();
+                });
+            },
+            emailGqlWrapper: <?= $gql->makeSsrGqlCall(UNIFIED_EMAIL_GQL, [
+                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            displayEmail: <?php
+            $email = $quoteViewModel->getQuote()->getCustomerEmail()
+                ?? $quoteViewModel->getQuote()->getShippingAddress()->getEmail();
+            echo "'$email'";
+            ?>,
+            displayPassword: '',
+            cartEmail: function () {
+                return this.emailGqlWrapper?.data?.cart?.email ?? '';
+            },
+            customerEmail: function () {
+                return this.emailGqlWrapper?.data?.customer?.email ?? '';
+            },
+            customerIsLoggedIn: function () {
+                return !!this.customerEmail();
+            },
+            save: async function () {
+                if (this.customerIsLoggedIn()) {
+                    return;
+                }
+
+                await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
+                    cart_id: this.emailGqlWrapper.ssr.variables.cart_id,
+                    email: this.displayEmail,
+                });
+            }
+        };
+    }
+</script>

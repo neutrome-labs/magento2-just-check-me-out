@@ -17,8 +17,6 @@ $components = $block->getData('headlessComponentRenderer');
 // todo: 1 в 1 копипаста с примера из оф модуля
 ?>
 
-<div id="payment-element"></div>
-
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     var stripe = null;
@@ -66,13 +64,11 @@ $components = $block->getData('headlessComponentRenderer');
     };
 
     var getStripeModuleConfiguration = function () {
-        window.psteamJustCheckMeOut.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
+        window.psteamJustCheckMeOutApiV1.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
             stripeVariables = response.data.getModuleConfiguration;
             initPaymentElement();
         });
     };
-
-    getStripeModuleConfiguration();
 
     var createPaymentMethod = async function () {
         await elements.submit();
@@ -111,11 +107,11 @@ $components = $block->getData('headlessComponentRenderer');
         return false;
     };
 
-    window.psteamJustCheckMeOut.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
+    window.psteamJustCheckMeOutApiV1.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
         await createPaymentMethod();
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const response = await window.psteamJustCheckMeOut.fn.fetchGql(`mutation {
+        const response = await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`mutation {
     setPaymentMethodOnCart(input: {
       cart_id: "${placeOrderComponent.cartId}"
       payment_method: {

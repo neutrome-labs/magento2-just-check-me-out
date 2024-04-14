@@ -5,7 +5,7 @@
         <arguments>
             <argument name="kind" xsi:type="string">block</argument>
             <argument name="argument" xsi:type="array">
-                <item name="template" xsi:type="string">PerspectiveTeam_JustCheckMeOutWithStripe::details.phtml</item>
+                <item name="template" xsi:type="string">PerspectiveTeam_JustCheckMeOutWithStripe::view.phtml</item>
             </argument>
         </arguments>
     </virtualType>

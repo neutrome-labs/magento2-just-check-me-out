@@ -6,70 +6,39 @@
 4. SSR GraphQL - один graphql фрагмент віддає дані при першому рендері і при оновленнях на фронті
 5. no magic. все явно викликається з кінцевих точок
 
-# Документація
-```
-src/JustCheckMeOut/
-├── Api
-│   └── AdditionalViewInterface.php # інтерфейс для реєстрації додаткових форм шипінг- пеймент-методів
-├── Controller
-│   └── Onepage
-│       └── Index.php
-├── etc
-│   ├── frontend
-│   │   └── routes.xml
-│   ├── module.xml
-│   └── schema.graphqls # додає поле з хтмл-кодом додаткових форм методів
-├── Model # внутрішня реалізація всяких штук
-│   ├── Resolver
-│   │   └── PaymentMethodDetails.php
-│   ├── AdditionalView.php
-│   └── SsrGraphqlContextFactory.php
-├── Service
-│   ├── AdditionalViewRenderer.php # рендерить додаткові форми шипінг- пеймент-методів
-│   └── PaymentMethodAdditionalViewRegistry.php # реєстр додаткових форм для розширення
-├── view
-│   └── frontend
-│       ├── layout
-│       │   └── psteamjustcheckmeout_onepage_index.xml
-│       └── templates
-│           ├── component
-│           │   ├── headless # headless компоненти, ака @storyblock. не треба налаштовувати в лейауті, рендеряться через спец. вьюмодель
-│           │   │   ├── atom 
-│           │   │   │   ├── button.phtml
-│           │   │   │   └── input-text.phtml
-│           │   │   └── block
-│           │   │       ├── address-fieldset.phtml
-│           │   │       ├── input-text.phtml
-│           │   │       └── radio-list-with-details.phtml
-│           │   ├── address.phtml # хмтл алпайн-компоненту блоку адрес
-│           │   ├── items.phtml # айтемів
-│           │   ├── payment-method-list.phtml # пейментів
-│           │   ├── place-button.phtml # ...
-│           │   ├── shipping-method-list.phtml
-│           │   └── totals.phtml
-│           ├── onepage
-│           │   └── main.phtml # єдиний шаблон onepage
-│           ├── api.phtml # js-частини алпайн-компонентів
-│           └── script-alpine.phtml # скрипти алпайну
-├── ViewModel
-│   ├── HeadlessComponentRenderer.php # 1 метод ::render(...) - рендерить headless компоненти
-│   ├── QuoteViewModel.php # в'юмодель для корзини
-│   └── SsrGraphqlResolver.php # допомагає вставляти SSR GraphQl виклики в js-компоненти
-└── registration.php
 
-19 directories, 29 files
-```
+# Roadmap
 
-```
-src/JustCheckMeOutWithStripe/
-├── etc
-│   ├── di.xml # реєструє додатковий блок для пейменту
-│   └── module.xml
-├── view
-│   └── frontend
-│       └── templates
-│           └── details.phtml # додатковий блок для пейменту: ініціалізує форму та проводить кастомний плейс
-└── registration.php
+- [ ] headless component .script.phtml companion
+- [ ] gql via bus, state events
+- [ ] loaders
+- [ ] spa sign in 
 
-5 directories, 4 files
-```
+
+# Getting Started
+
+
+## Merchant
+
+First thing first - this is a core repository containing base code for derived checkout extensions.
+To use this checkout in production you should consider:
+
+1. installing one of ready-to-use checkout extensions from the [Magento 2 Extension Store](https://google.com)
+   and any required extension integrations (shipment/payment providers, giftcards, etc.) [there](integrations.md);
+2. building your own checkout extension with a developer/team to deeply integrate any required custom features for your storefront.
+
+
+## Developer
+
+### To integrate ready-to-use checkout extension based on this module
+
+0. Read the docs [here](docs/index.md)
+1. Install selected checkout extension as described in its Installing Guide,
+2. Review and find integrations for the required additional extensions [here](integrations.md),
+3. Review and set desired settings in the Admin (`Stores` - `Configuration` - `Sales` - `Just Check Me Out`),
+4. Enjoy!
+
+### To create your own checkout extension based on this module
+
+1. Create new Magento 2 module depending on this one (both via composer and module.xml),
+2.

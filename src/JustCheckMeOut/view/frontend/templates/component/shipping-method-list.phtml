@@ -17,19 +17,30 @@ $components = $block->getData('headlessComponentRenderer');
 $radioListKey = uniqid('shipping_method_');
 ?>
 
-<form action="#" x-data="window.psteamJustCheckMeOut.component.createShippingMethodList()">
+<form action="#" x-data="window.psteamJustCheckMeOutApiV1.component.createShippingMethodList()">
+    <template x-show="errors().length > 0">
+        <ul style="border: 1px solid red">
+            <template x-for="error in errors()">
+                <li><span x-text="error"></span></li>
+            </template>
+        </ul>
+    </template>
+
     <?= $components->render('atom/button', [
         'text' => '[dev] refresh',
         'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
     ]) ?>
+
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
         'alpine' => [
             'expr' => [
+                'disabled' => '!interactive',
                 'items' => 'methodsAvailable()',
                 'value' => '`${item.carrier_code}_${item.method_code}`',
                 'current' => 'currentMethod()',
                 'label' => '`${item.carrier_title} ${item.method_title} - ${item.price_incl_tax.value} ${item.price_incl_tax.currency}`',
+                'detail' => 'item.details_html',
                 'select' => 'await selectMethod(item)',
             ],
         ]

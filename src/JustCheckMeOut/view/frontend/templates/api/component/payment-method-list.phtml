@@ -1,0 +1,86 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOutApiV1.component.createPaymentMethodList = function () {
+        <?php const PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
+query paymentMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    available_payment_methods {
+      code
+      title
+      details_html
+    }
+    selected_payment_method {
+      code
+    }
+  }
+}
+GRAPHQL;
+
+        const SET_PAYMENT_METHOD_GQL = <<<GRAPHQL
+mutation setPaymentMethod(\$card_id: String!, \$code: String!){
+  setPaymentMethodOnCart(input: {
+    cart_id: \$card_id,
+    payment_method: {
+      code: \$code
+    }
+  }){
+    cart {
+      selected_payment_method {
+        purchase_order_number
+      }
+    }
+  }
+}
+GRAPHQL;
+        ?>
+
+        return {
+            interactive: true,
+            init: function () {
+                window.psteamJustCheckMeOutApiV1.bus.on('state.set.address', async payload => {
+                    await this.methodsGqlWrapper.refresh();
+                });
+            },
+            methodsGqlWrapper: <?= $gql->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
+                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            methodsAvailable: function () {
+                return this.methodsGqlWrapper?.data?.cart?.available_payment_methods ?? [];
+            },
+            currentMethod: function () {
+                const selected = this.methodsGqlWrapper?.data?.cart?.selected_payment_method;
+                return selected?.code;
+            },
+            selectMethod: async function (method) {
+                try {
+                    this.interactive = false;
+                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
+                        card_id: this.methodsGqlWrapper.ssr.variables.cart_id,
+                        code: method.code,
+                    });
+                    await this.methodsGqlWrapper.refresh(); // todo: performance / merge with set
+                    window.psteamJustCheckMeOutApiV1.bus.fire('state.set.payment-method', this.currentMethod());
+                } finally {
+                    this.interactive = true;
+                }
+            }
+        };
+    }
+</script>

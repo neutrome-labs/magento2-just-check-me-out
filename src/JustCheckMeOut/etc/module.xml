@@ -3,7 +3,8 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="PerspectiveTeam_JustCheckMeOut">
         <sequence>
-            <module name="Magento_Checkout"/>
+            <module name="PerspectiveTeam_SsrGraphql"/>
+            <module name="Magento_QuoteGraphQl"/>
         </sequence>
     </module>
 </config>

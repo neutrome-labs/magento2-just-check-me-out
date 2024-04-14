@@ -20,9 +20,7 @@ class HeadlessComponentRenderer implements ArgumentInterface
             ? "PerspectiveTeam_JustCheckMeOut::component/headless/$template.phtml"
             : $template;
 
-        if (!$slug) {
-            $slug = uniqid($template);
-        }
+        $slug = $slug ?? uniqid();
 
         return $this->blockFactory
             ->create()

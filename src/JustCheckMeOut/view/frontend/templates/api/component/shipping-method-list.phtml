@@ -1,0 +1,110 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.psteamJustCheckMeOutApiV1.component.createShippingMethodList = function () {
+        <?php const SHIPPING_METHODS_LIST_GQL = <<<GRAPHQL
+query shippingMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    shipping_addresses {
+      available_shipping_methods {
+        carrier_code
+        carrier_title
+        method_code
+        method_title
+        price_incl_tax {
+          currency
+          value
+        }
+        details_html
+      }
+      selected_shipping_method {
+        carrier_code
+        method_code
+        carrier_title
+        method_title
+      }
+    }
+  }
+}
+GRAPHQL;
+
+        const SET_SHIPPING_METHOD_GQL = <<<GRAPHQL
+mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: String!){
+  setShippingMethodsOnCart(input: {
+    cart_id: \$card_id,
+    shipping_methods: [{
+      carrier_code: \$carrier,
+      method_code: \$method
+    }]
+  }){
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+        }
+      }
+    }
+  }
+}
+GRAPHQL;
+        ?>
+
+        return {
+            interactive: true,
+            init: function () {
+                window.psteamJustCheckMeOutApiV1.bus.on('state.set.address', async payload => {
+                    await this.methodsGqlWrapper.refresh();
+                });
+            },
+            methodsGqlWrapper: <?= $gql->makeSsrGqlCall(SHIPPING_METHODS_LIST_GQL, [
+                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            addressFromGqlData: function () {
+                const addresses = this.methodsGqlWrapper?.data?.cart?.shipping_addresses;
+                return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
+            },
+            errors: function () {
+                return this.methodsGqlWrapper.errors?.map(x => x.message).filter(x => x.length > 0) ?? [];
+            },
+            methodsAvailable: function () {
+                return this.addressFromGqlData()?.available_shipping_methods;
+            },
+            currentMethod: function () {
+                const address = this.addressFromGqlData();
+                return address?.selected_shipping_method?.carrier_code + '_' + address?.selected_shipping_method?.method_code;
+            },
+            selectMethod: async function (method) {
+                try {
+                    this.interactive = false;
+                    // todo: viaBus
+                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
+                        card_id: this.methodsGqlWrapper.ssr.variables.cart_id,
+                        carrier: method.carrier_code,
+                        method: method.method_code,
+                    });
+                    await this.methodsGqlWrapper.refresh(); // todo: performance / merge with set
+                    window.psteamJustCheckMeOutApiV1.bus.fire('state.set.shipping-method', this.currentMethod());
+                } finally {
+                    this.interactive = true;
+                }
+            }
+        };
+    }
+</script>

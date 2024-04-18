@@ -16,4 +16,11 @@ class Headless extends Template
     {
         parent::__construct($context, $data);
     }
+
+    public function getCacheKeyInfo()
+    {
+        $info = parent::getCacheKeyInfo();
+        $info['headless'] = $this->getNameInLayout();
+        return $info;
+    }
 }

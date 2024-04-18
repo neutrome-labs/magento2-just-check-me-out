@@ -52,7 +52,7 @@ class HeadlessComponentRenderer implements ArgumentInterface
                 $block->setTemplate($template);
             }
             return $block->toHtml();
-        } catch (ValidatorException $e) {
+        } catch (ValidatorException $e) { // todo: is not thrown in production mode
             if (str_starts_with($e->getMessage(), 'Invalid template file') && isset($fallbackTemplate)) {
                 try {
                     return $block->setTemplate($fallbackTemplate)->toHtml();

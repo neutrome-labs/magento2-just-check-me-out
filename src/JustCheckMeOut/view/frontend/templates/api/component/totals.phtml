@@ -1,0 +1,66 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var SsrGraphqlViewModel $gql */
+$gql = $block->getData('ssrGqlViewModel');
+/** @var QuoteViewModel $quoteViewModel */
+$quoteViewModel = $block->getData('quoteViewModel');
+?>
+
+<script>
+    window.justCheckMeOutApiV1.component.createTotals = function (props = {
+        refreshEvents: ['state.set.shipping-method', 'state.set.payment-method'],
+    }) {
+<?php const CART_TOTALS_GQL = <<<GRAPHQL
+query totals(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    prices {
+      subtotal_excluding_tax {
+        currency
+        value
+      }
+      applied_taxes {
+        amount {
+          currency
+          value
+        }
+        label
+      }
+      grand_total {
+        currency
+        value
+      }
+    }
+  }
+}
+GRAPHQL; ?>
+
+        return {
+            totalsGqlWrapper: <?= $gql->makeSsrGqlCall(CART_TOTALS_GQL, [
+                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            init: function () {
+                for (const e of props.refreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => await this.totalsGqlWrapper.refresh());
+                }
+            },
+            subtotal: function () {
+                return this.totalsGqlWrapper?.data?.cart?.prices?.subtotal_excluding_tax;
+            },
+            taxes: function () {
+                return this.totalsGqlWrapper?.data?.cart?.prices?.applied_taxes ?? [];
+            },
+            grandTotal: function () {
+                return this.totalsGqlWrapper?.data?.cart?.prices?.grand_total;
+            },
+        };
+    }
+</script>

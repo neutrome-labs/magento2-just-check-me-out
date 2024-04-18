@@ -14,27 +14,26 @@ $quoteViewModel = $block->getData('quoteViewModel');
 /** @var HeadlessComponentRenderer $components */
 $components = $block->getData('headlessComponentRenderer');
 
-$radioListKey = uniqid('payment_method_');
+$radioListKey = uniqid('shipping_method_');
 ?>
 
-<form action="#" x-data="window.justCheckMeOutApiV1.component.createPaymentMethodList()">
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh',
-        'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
-    ]) ?>
+<form action="#" x-data="window.justCheckMeOutApiV1.component.createShippingMethodList()">
+    <?= $components->render('block/messages', [
+        'scope' => 'shipping-method-list',
+    ], 'justcheckmeout.onepage.shipping-method-list.messages') ?>
 
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
         'alpine' => [
             'expr' => [
                 'disabled' => '!interactive',
-                'items' => 'methodsAvailable()',
-                'value' => 'item.code',
-                'current' => 'currentMethod()',
-                'label' => 'item.title',
-                'detail' => 'item.details_html',
+                'items' => 'methodsAvailable',
+                'value' => '`${item.carrier_code}_${item.method_code}`',
+                'current' => 'selectedMethod',
+                'label' => '`${item.carrier_title} ${item.method_title} - ${item.price_incl_tax.value} ${item.price_incl_tax.currency}`',
+                'details' => 'selectedMethodDetailsHtml',
                 'select' => 'await selectMethod(item)',
             ],
         ]
-    ], 'justcheckmeout.onepage.payment-method-list.list') ?>
+    ], 'justcheckmeout.onepage.shipping-method-list.list') ?>
 </form>

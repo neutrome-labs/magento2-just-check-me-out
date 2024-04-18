@@ -9,7 +9,7 @@ use PerspectiveTeam\JustCheckMeOut\Block\Headless;
 ?>
 
 <button
-    style="padding: 10px; background-color: #eee; border: 1px solid #ccc; border-radius: 5px;"
+    class="pointer-events-auto rounded-md bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-600 hover:text-white"
     <?php foreach ($block->getData('attributes') ?? [] as $k => $v) {
         echo " $k=\"$v\"";
     } ?>

@@ -11,23 +11,24 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.component.createPaymentMethodList = function () {
+    window.justCheckMeOutApiV1.component.createPaymentMethodList = function (props = {
+        refreshEvents: ['state.set.customer', 'state.set.shipping-address', 'state.set.shipping-method'],
+    }) {
         <?php const PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
 query paymentMethodsAvailable(\$cart_id: String!) {
   cart(cart_id: \$cart_id) {
     available_payment_methods {
       code
       title
-      details_html
     }
     selected_payment_method {
       code
+      details_html
     }
   }
 }
@@ -42,8 +43,13 @@ mutation setPaymentMethod(\$card_id: String!, \$code: String!){
     }
   }){
     cart {
+      available_payment_methods {
+        code
+        title
+      }
       selected_payment_method {
-        purchase_order_number
+        code
+        details_html
       }
     }
   }
@@ -52,34 +58,70 @@ GRAPHQL;
         ?>
 
         return {
-            interactive: true,
-            init: function () {
-                window.psteamJustCheckMeOutApiV1.bus.on('state.set.address', async payload => {
-                    await this.methodsGqlWrapper.refresh();
-                });
-            },
-            methodsGqlWrapper: <?= $gql->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
+            methodsGql: <?= $gql->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
                 'cart_id' => $quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
-            methodsAvailable: function () {
-                return this.methodsGqlWrapper?.data?.cart?.available_payment_methods ?? [];
+
+            interactive: true,
+            methodsAvailable: [],
+            selectedMethod: undefined,
+            selectedMethodDetailsHtml: undefined,
+
+            tryExtractGqlData: function (data) {
+                this.methodsAvailable = data?.cart?.available_payment_methods;
+                if (data?.cart?.selected_payment_method) {
+                    const newMethodCode = data?.cart?.selected_payment_method?.code;
+                    if (this.selectedMethod !== newMethodCode) {
+                        this.selectedMethod = newMethodCode;
+                        this.selectedMethodDetailsHtml = data?.cart?.selected_payment_method?.details_html;
+                    }
+                }
             },
-            currentMethod: function () {
-                const selected = this.methodsGqlWrapper?.data?.cart?.selected_payment_method;
-                return selected?.code;
+            tryExtractGqlErrors: function (errors) {
+                if (errors?.length > 0) {
+                    for (const e of errors) {
+                        this.$dispatch('justcheckmeout-message-payment-method-list', {
+                            type: 'error',
+                            text: e.message,
+                        });
+                    }
+                }
             },
+
+            init: function () {
+                this.tryExtractGqlData(this.methodsGql?.data);
+                this.tryExtractGqlErrors(this.methodsGql?.errors);
+
+                for (const e of props.refreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                        try {
+                            this.interactive = false;
+
+                            await this.methodsGql.refresh();
+                            this.tryExtractGqlData(this.methodsGql?.data);
+                            this.tryExtractGqlErrors(this.methodsGql?.errors);
+                        } finally {
+                            this.interactive = true;
+                        }
+                    });
+                }
+            },
+
             selectMethod: async function (method) {
                 try {
                     this.interactive = false;
-                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
-                        card_id: this.methodsGqlWrapper.ssr.variables.cart_id,
+
+                    const r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
+                        card_id: window.justCheckMeOutApiV1.globals.getCartId(),
                         code: method.code,
                     });
-                    await this.methodsGqlWrapper.refresh(); // todo: performance / merge with set
-                    window.psteamJustCheckMeOutApiV1.bus.fire('state.set.payment-method', this.currentMethod());
+                    this.tryExtractGqlData(r.data?.setPaymentMethodOnCart);
+                    this.tryExtractGqlErrors(r.errors);
                 } finally {
                     this.interactive = true;
                 }
+
+                window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
             }
         };
     }

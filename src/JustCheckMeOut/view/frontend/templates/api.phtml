@@ -12,47 +12,40 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-
+$cartId = $quoteViewModel->getMaskedQuoteId();
 $scriptTagId = uniqid('psteam-justcheckmeout-api-script_');
 ?>
 
-<script id="<?= $scriptTagId ?>">
-    window.psteamJustCheckMeOutApiV1 = {
-        globals: { // todo: via alpinejs::$store
-            _: {
-                placeOrderHooks: {},
+<script id="<?= $scriptTagId ?>" x-init="window.justCheckMeOutApiV1.init()">
+    window.justCheckMeOutApiV1 = {
+        globals: {
+            getCartId: function () {
+                return Alpine.store('justcheckmeout::cartId') ?? <?= "'$cartId'" ?>;
             },
             registerJsPlaceOrderHook: function (paymentMethodCode, handler) {
-                window.psteamJustCheckMeOutApiV1.globals._.placeOrderHooks[paymentMethodCode] = handler;
+                const hooks = Alpine.store('justcheckmeout::placeOrderHooks') ?? {};
+                hooks[paymentMethodCode] = handler
+                Alpine.store('justcheckmeout::placeOrderHooks', hooks);
             },
             getJsPlaceOrderHook: function (paymentMethodCode) {
-                return window.psteamJustCheckMeOutApiV1.globals._.placeOrderHooks[paymentMethodCode];
+                return (Alpine.store('justcheckmeout::placeOrderHooks') ?? {})[paymentMethodCode];
             }
         },
         bus: {
             _el: document.getElementById("<?= $scriptTagId ?>"),
             on: function (event, callback) {
-                const nativeCallback = async (e) => {
-                    await callback(e.detail.payload);
-                };
-
-                window.psteamJustCheckMeOutApiV1
+                window.justCheckMeOutApiV1
                     .bus
                     ._el
-                    .addEventListener(`psteam_justcheckmeout::${event}`, nativeCallback);
-                return () => window.psteamJustCheckMeOutApiV1
-                    .bus
-                    ._el
-                    .removeEventListener(`psteam_justcheckmeout::${event}`, nativeCallback);
+                    .addEventListener(`psteam_justcheckmeout::${event}`, e => callback(e.detail.payload));
             },
             fire: function (event, payload) {
-                window.psteamJustCheckMeOutApiV1
+                window.justCheckMeOutApiV1
                     .bus
                     ._el
                     .dispatchEvent(new CustomEvent(`psteam_justcheckmeout::${event}`, {
@@ -61,18 +54,9 @@ $scriptTagId = uniqid('psteam-justcheckmeout-api-script_');
                         }
                     }));
             },
-            then: function (promise, event, callback = undefined, once = true) {
-                promise.then(async (result) => {
-                    if (!!callback) {
-                        if (once) {
-                            callback(result)
-                        } else {
-                            window.psteamJustCheckMeOutApiV1.bus.on(event, callback);
-                        }
-                    }
-                    window.psteamJustCheckMeOutApiV1.bus.fire(event, result);
-                });
-            }
+        },
+        init: function () {
+
         },
         fn: {},
         component: {},
@@ -80,24 +64,25 @@ $scriptTagId = uniqid('psteam-justcheckmeout-api-script_');
 </script>
 
 <?php
-    $innerBlockData = [
-        'ssrGqlViewModel' => $gql,
-        'quoteViewModel' => $quoteViewModel,
-    ];
+$innerBlockData = [
+    'ssrGqlViewModel' => $gql,
+    'quoteViewModel' => $quoteViewModel,
+];
 
-    $innerBlocks = [
-        'fn/graphql',
-        'component/customer-email-form',
-        'component/shipping-address-form',
-        'component/unified-address-form',
-        'component/shipping-method-list',
-        'component/payment-method-list',
-        'component/place-order-button',
-    ];
+$innerBlocks = [
+    'fn/graphql',
+    'component/customer-email-form',
+    'component/shipping-address-form',
+    'component/unified-address-form',
+    'component/shipping-method-list',
+    'component/payment-method-list',
+    'component/totals',
+    'component/place-order-button',
+];
 
-    foreach ($innerBlocks as $name) {
-        echo $components->render("PerspectiveTeam_JustCheckMeOut::api/$name.phtml", $innerBlockData);
-    }
+foreach ($innerBlocks as $name) {
+    echo $components->render("PerspectiveTeam_JustCheckMeOut::api/$name.phtml", $innerBlockData);
+}
 ?>
 
 <?= $block->getChildHtml('checkout.onepage.api.after') ?>

@@ -11,13 +11,12 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.component.createPlaceOrder = function () {
+    window.justCheckMeOutApiV1.component.createPlaceOrder = function () {
         <?php const PLACE_ORDER_GQL = <<<GRAPHQL
 mutation placeOrder(\$card_id: String!) {
   placeOrder(input: { cart_id: \$card_id }) {
@@ -30,37 +29,60 @@ GRAPHQL;
         ?>
 
         return {
-            cartId: '<?= $quoteViewModel->getMaskedQuoteId() ?>',
+            interactive: true,
             currentPaymentMethodCode: '<?= $quoteViewModel->getQuote()->getPayment()->getMethod() ?>',
             init: function () {
-                window.psteamJustCheckMeOutApiV1.bus.on('state.set.payment-method', payload => {
+                window.justCheckMeOutApiV1.bus.on('state.set.payment-method', payload => {
                     this.currentPaymentMethodCode = payload;
                 })
             },
             place: async function () {
-                const hook = window.psteamJustCheckMeOutApiV1.globals.getJsPlaceOrderHook(this.currentPaymentMethodCode);
-                const result = hook !== undefined
-                    ? await hook(this)
-                    : {
-                        preventDefault: false,
-                        orderNumber: undefined,
-                        errorMessage: undefined,
-                    };
+                try {
+                    this.interactive = false;
 
-                if (!result.preventDefault) {
-                    result.orderNumber = (await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
-                        card_id: this.cartId,
-                    })).data.placeOrder.order.order_number;
+                    const hook = window.justCheckMeOutApiV1.globals.getJsPlaceOrderHook(this.currentPaymentMethodCode);
+                    const result = hook !== undefined
+                        ? await hook(this)
+                        : {
+                            preventDefault: false,
+                            orderNumber: undefined,
+                            errorMessages: [],
+                        };
+
+                    if (!result.preventDefault) {
+                        const r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
+                            card_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                        });
+                        result.orderNumber = r?.data?.placeOrder?.order?.order_number;
+                        result.errorMessages = r?.errors?.map(e => e.message).filter(e => e?.length > 0);
+                    }
+
+                    return result;
+                } catch (e) {
+                    this.interactive = true;
                 }
-
-                return result;
             },
             getNextUrl: async function () {
                 return `/checkout/onepage/success`;
             },
             placeAndGoNext: async function () {
-                await this.place();
-                window.location.href = await this.getNextUrl();
+                window.justCheckMeOutApiV1.bus.fire('place-order.before', this);
+                const order = await this.place();
+                if (order.orderNumber) {
+                    window.justCheckMeOutApiV1.bus.fire('place-order.after', this);
+                    window.location.href = await this.getNextUrl();
+                } else {
+                    this.interactive = true;
+                }
+
+                if (order.errorMessages?.length > 0) {
+                    for (const e of order.errorMessages) {
+                        this.$dispatch('justcheckmeout-message-main', {
+                            type: 'error',
+                            text: e,
+                        });
+                    }
+                }
             }
         };
     }

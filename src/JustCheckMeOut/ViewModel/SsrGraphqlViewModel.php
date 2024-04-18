@@ -35,7 +35,7 @@ class SsrGraphqlViewModel implements ArgumentInterface
         $options = $options !== null ? json_encode($options) : '';
 
         return <<<JS
-window.psteamJustCheckMeOutApiV1.fn.createSsrGqlStub($query, $variables, $response, $options)
+window.justCheckMeOutApiV1.fn.createSsrGqlStub($query, $variables, $response, $options)
 JS;
     }
 }

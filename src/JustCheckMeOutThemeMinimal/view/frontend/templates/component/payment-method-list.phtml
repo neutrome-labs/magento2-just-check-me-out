@@ -18,21 +18,20 @@ $radioListKey = uniqid('payment_method_');
 ?>
 
 <form action="#" x-data="window.justCheckMeOutApiV1.component.createPaymentMethodList()">
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh',
-        'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
-    ]) ?>
+    <?= $components->render('block/messages', [
+        'scope' => 'payment-method-list',
+    ], 'justcheckmeout.onepage.payment-method-list.messages') ?>
 
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
         'alpine' => [
             'expr' => [
                 'disabled' => '!interactive',
-                'items' => 'methodsAvailable()',
+                'items' => 'methodsAvailable',
                 'value' => 'item.code',
-                'current' => 'currentMethod()',
+                'current' => 'selectedMethod',
                 'label' => 'item.title',
-                'detail' => 'item.details_html',
+                'details' => 'selectedMethodDetailsHtml',
                 'select' => 'await selectMethod(item)',
             ],
         ]

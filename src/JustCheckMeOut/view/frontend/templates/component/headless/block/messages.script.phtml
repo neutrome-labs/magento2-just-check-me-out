@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use PerspectiveTeam\JustCheckMeOut\Block\Headless;
+
+/** @var Headless $block */
+/** @var Escaper $escaper */
+
+?>
+
+<script>
+    window.justCheckMeOutApiV1.component.createMessages = function () {
+        return {
+            messages: [],
+            add: function (message) {
+                if (!message?.id) {
+                    message.id = Math.random().toString(36).substring(7);
+                }
+
+                this.messages.push(message);
+                setTimeout(() => {
+                    this.remove(message.id);
+                }, 3000);
+            },
+            remove: function(id) {
+                this.messages = this.messages.filter(message => message.id !== id);
+            },
+        };
+    };
+</script>
+

@@ -9,10 +9,9 @@
 
 # Roadmap
 
-- [ ] headless component .script.phtml companion
-- [ ] gql via bus, state events
-- [ ] loaders
-- [ ] spa sign in 
+- [ ] theming
+- [ ] config management
+- [ ] [demo] spa sign in
 
 
 # Getting Started

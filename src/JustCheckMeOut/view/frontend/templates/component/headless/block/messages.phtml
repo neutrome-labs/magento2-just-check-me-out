@@ -1,0 +1,24 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use PerspectiveTeam\JustCheckMeOut\Block\Headless;
+
+/** @var Headless $block */
+/** @var Escaper $escaper */
+
+$scope = $block->getData('scope');
+?>
+
+<div x-data="window.justCheckMeOutApiV1.component.createMessages()"
+     @justcheckmeout-message-<?= $scope ?>.window="add($event.detail)">
+    <template x-if="messages.length > 0">
+        <ul>
+            <template x-for="message in messages">
+                <li style="border: 1px solid black; margin-bottom: 10px;">
+                    <span x-text="message.text"></span>
+                </li>
+            </template>
+        </ul>
+    </template>
+</div>

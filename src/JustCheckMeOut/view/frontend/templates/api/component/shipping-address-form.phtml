@@ -11,13 +11,15 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.component.createQuoteShippingAddressForm = function () {
+    window.justCheckMeOutApiV1.component.createQuoteShippingAddressForm = function (props = {
+        bookRefreshEvents: ['state.set.customer'],
+        formRefreshEvents: [],
+    }) {
         <?php const CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL = <<<GRAPHQL
 query customerAddresses {
   customer {
@@ -79,55 +81,43 @@ mutation setShippingAddress(\$cart_id: String!, \$customer_address_id: Int, \$ad
     }
   ) {
     cart {
-      id
+      shipping_addresses {
+        firstname
+        lastname
+        telephone
+        country {
+          code
+        }
+        city
+        postcode
+        street
+      }
     }
   }
 }
 GRAPHQL; ?>
 
         return {
-            addressBookGqlWrapper: <?= $gql->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
-            addressGqlWrapper: <?= $gql->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
+            addressBookGql: <?= $gql->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
+            addressGql: <?= $gql->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
                 'cart_id' => $quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
+
+            interactive: true,
             selectedAddressId: undefined,
             formData: {},
+            formErrors: {},
+
             extractFormDataFromAddressModel: function (address) {
                 return {
                     firstname: address?.firstname ?? '',
                     lastname: address?.lastname ?? '',
                     telephone: address?.telephone ?? '',
-                    country_code: address?.country_code ?? address?.country?.code ?? '<?= $quoteViewModel->getQuote()->getShippingAddress()->getCountry() ?>',
+                    country_code: address?.country_code ?? address?.country?.code ?? '<?= '' // todo: get default country from config ?>',
                     city: address?.city ?? '',
                     postcode: address?.postcode ?? '',
                     street: address?.street ?? [],
                 };
-            },
-            tryExtractFormDataFromGqlData: function (data) {
-                const addresses = data?.cart?.shipping_addresses;
-                const address = data?.cart?.shipping_addresses?.length > 0
-                    ? addresses[0]
-                    : null;
-                return this.extractFormDataFromAddressModel(address);
-            },
-            init: function () {
-                this.selectAddressFromBook(
-                    this.addressesFromAddressBook().find(
-                        a => a.id === parseInt(this.addressBookGqlWrapper?.data?.customer?.default_shipping)
-                    )
-                );
-                this.$watch('addressBookGqlWrapper', () => {
-                    this.selectAddressFromBook(
-                        this.addressesFromAddressBook().find(
-                            a => a.id === parseInt(this.addressBookGqlWrapper?.data?.customer?.default_shipping)
-                        )
-                    );
-                });
-
-                this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
-                this.$watch('addressGqlWrapper', () => {
-                    this.formData = this.tryExtractFormDataFromGqlData(this.addressGqlWrapper?.data);
-                });
             },
             addressesFromAddressBook: function () {
                 return this.addressBookGqlWrapper?.data?.customer?.addresses ?? [];
@@ -144,20 +134,79 @@ GRAPHQL; ?>
                 this.selectedAddressId = address?.id;
                 this.formData = this.extractFormDataFromAddressModel(address);
             },
-            save: async function () {
-                if (!this.selectedAddressId) {
-                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
-                        cart_id: '<?= $quoteViewModel->getMaskedQuoteId() ?>',
-                        address: this.formData,
-                    });
+
+            tryExtractFormDataFromGqlData: function (data) {
+                const addresses = data?.cart?.shipping_addresses;
+                const address = data?.cart?.shipping_addresses?.length > 0
+                    ? addresses[0]
+                    : null;
+                return this.extractFormDataFromAddressModel(address);
+            },
+            tryExtractFormErrorsFromGqlData: function (errors) {
+                return [];
+            },
+
+            init: function () {
+                const defaultSelectedAddressId = parseInt(this.addressBookGql?.data?.customer?.default_shipping);
+                if (defaultSelectedAddressId > 0 && Object.entries(this.formData).length === 0) {
+                    const address = this.addressesFromAddressBook().find(a => a.id === defaultSelectedAddressId);
+                    this.selectAddressFromBook(address);
                 } else {
-                    // todo: save current customer address data
-                    await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
-                        cart_id: '<?= $quoteViewModel->getMaskedQuoteId() ?>',
-                        customer_address_id: this.selectedAddressId,
+                    this.formData = this.tryExtractFormDataFromGqlData(this.addressGql?.data);
+                    this.formErrors = this.tryExtractFormErrorsFromGqlData(this.addressGql?.errors);
+                }
+
+                for (const e of props.bookRefreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                        try {
+                            this.interactive = false;
+                            await this.addressBookGql.refresh();
+                        } finally {
+                            this.interactive = true;
+                        }
                     });
                 }
-                window.psteamJustCheckMeOutApiV1.bus.fire('state.set.shipping-address-form', this.formData);
+
+                for (const e of props.formRefreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                        try {
+                            this.interactive = false;
+
+                            await this.addressGql.refresh();
+                            this.formData = this.tryExtractFormDataFromGqlData(this.addressGql?.data);
+                            this.formErrors = this.tryExtractFormErrorsFromGqlData(this.addressGql?.errors);
+                        } finally {
+                            this.interactive = true;
+                        }
+                    });
+                }
+            },
+
+            save: async function () {
+                try {
+                    this.interactive = false;
+
+                    let r = undefined;
+                    if (!this.selectedAddressId) {
+                        r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                            cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                            address: this.formData,
+                        });
+                    } else {
+                        // todo: save current customer address data
+                        r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                            cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                            customer_address_id: this.selectedAddressId,
+                        });
+                    }
+
+                    this.tryExtractFormDataFromGqlData(r.data?.setBillingAddressOnCart);
+                    this.tryExtractFormErrorsFromGqlData(r.errors);
+                } finally {
+                    this.interactive = true;
+                }
+
+                window.justCheckMeOutApiV1.bus.fire('state.set.shipping-address', this);
             }
         };
     }

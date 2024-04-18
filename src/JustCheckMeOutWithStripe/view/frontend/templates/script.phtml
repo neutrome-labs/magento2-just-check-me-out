@@ -24,7 +24,7 @@ $components = $block->getData('headlessComponentRenderer');
     var paymentElement = null;
     var paymentMethod = null;
     var stripeVariables = null;
-    var moduleConfigurationQuery = 'query { getModuleConfiguration {\n' +
+    var moduleConfigurationQuery = 'query { getStripeConfiguration {\n' +
         '        apiKey\n' +
         '        locale\n' +
         '        appInfo\n' +
@@ -64,8 +64,8 @@ $components = $block->getData('headlessComponentRenderer');
     };
 
     var getStripeModuleConfiguration = function () {
-        window.psteamJustCheckMeOutApiV1.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
-            stripeVariables = response.data.getModuleConfiguration;
+        window.justCheckMeOutApiV1.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
+            stripeVariables = response.data.getStripeConfiguration;
             initPaymentElement();
         });
     };
@@ -82,6 +82,8 @@ $components = $block->getData('headlessComponentRenderer');
         });
         if (result && result.paymentMethod) {
             paymentMethod = result.paymentMethod;
+        } else {
+            throw result?.error?.message ?? 'Unexpected error creating payment method.';
         }
     };
 
@@ -107,17 +109,27 @@ $components = $block->getData('headlessComponentRenderer');
         return false;
     };
 
-    window.psteamJustCheckMeOutApiV1.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
-        await createPaymentMethod();
-        await new Promise(resolve => setTimeout(resolve, 2000));
+    document.addEventListener('DOMContentLoaded', function () {
+        window.justCheckMeOutApiV1.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
+            const xresult = {
+                preventDefault: true,
+                orderNumber: undefined,
+                errorMessages: [],
+            };
 
-        const response = await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`mutation {
+            try {
+                await createPaymentMethod();
+            } catch (e) {
+                xresult.errorMessages.push(e);
+                return xresult;
+            }
+
+            const response = await window.justCheckMeOutApiV1.fn.fetchGql(`mutation {
     setPaymentMethodOnCart(input: {
-      cart_id: "${placeOrderComponent.cartId}"
+      cart_id: "${window.justCheckMeOutApiV1.globals.getCartId()}"
       payment_method: {
         code: "stripe_payments"
         stripe_payments: {
-          payment_element: true
           payment_method: "${getPaymentMethodId()}"
           save_payment_method: true
         }
@@ -129,52 +141,51 @@ $components = $block->getData('headlessComponentRenderer');
       }
     }
   }
-  placeOrder(input: {cart_id: "${placeOrderComponent.cartId}"}) {
+  placeOrder(input: {cart_id: "${window.justCheckMeOutApiV1.globals.getCartId()}"}) {
     order {
       order_number
       client_secret
     }
   }
 }`);
-        const xresult = {
-            preventDefault: true,
-            orderNumber: undefined,
-            errorMessage: undefined,
-        };
 
-        if (response && response.data && response.data.placeOrder && response.data.placeOrder.order && response.data.placeOrder.order.client_secret) {
-            xresult.orderNumber = response.data.placeOrder.order.order_number;
+            if (response && response.errors) {
+                xresult.errorMessages = response.errors.map(e => e.message);
+            }
 
-            await stripe.retrievePaymentIntent(response.data.placeOrder.order.client_secret).then(function (result) {
-                if (result.error) {
-                    alert(JSON.stringify(result, null, 2));
-                } else if (result.paymentIntent) {
-                    if (result.paymentIntent.status == "requires_action") {
-                        stripe.handleNextAction({
-                            clientSecret: response.data.placeOrder.order.client_secret
-                        }).then(function (result) {
-                            if (result && result.paymentIntent) {
-                                if (isSuccessful(result.paymentIntent)) {
-                                    alert("Success, you can redirect the customer to the order success page.");
+            if (response && response.data && response.data.placeOrder && response.data.placeOrder.order && response.data.placeOrder.order.client_secret) {
+                xresult.orderNumber = response.data.placeOrder.order.order_number;
+
+                await stripe.retrievePaymentIntent(response.data.placeOrder.order.client_secret).then(function (result) {
+                    if (result.error) {
+                        xresult.errorMessages.push(result.error.message);
+                    } else if (result.paymentIntent) {
+                        if (result.paymentIntent.status == "requires_action") {
+                            stripe.handleNextAction({
+                                clientSecret: response.data.placeOrder.order.client_secret
+                            }).then(function (result) {
+                                if (result && result.paymentIntent) {
+                                    if (isSuccessful(result.paymentIntent)) {
+                                        // ok
+                                    } else {
+                                        xresult.errorMessages.push("Payment failed, the PaymentIntent has a status of " + result.paymentIntent.status);
+                                    }
                                 } else {
-                                    alert("Payment failed, the PaymentIntent has a status of " + result.paymentIntent.status);
+                                    xresult.errorMessages.push("Unhandled PaymentIntent status " + JSON.stringify(result));
                                 }
-                            } else {
-                                alert(JSON.stringify(result, null, 2));
-                            }
-                        });
-                    } else if (isSuccessful(result.paymentIntent)) {
-                        alert("Success, you can redirect the customer to the order success page.");
+                            });
+                        } else if (isSuccessful(result.paymentIntent)) {
+                            // ok
+                        } else {
+                            xresult.errorMessages.push("Unhandled PaymentIntent status " + result.paymentIntent.status);
+                        }
                     } else {
-                        alert("Unhandled PaymentIntent status " + result.paymentIntent.status);
+                        xresult.errorMessages.push("API call crashed " + JSON.stringify(result));
                     }
-                } else {
-                    // API call crashed
-                    alert(JSON.stringify(result, null, 2));
-                }
-            });
-        }
+                });
+            }
 
-        return xresult;
-    })
+            return xresult;
+        })
+    });
 </script>

@@ -18,6 +18,10 @@ $components = $block->getData('headlessComponentRenderer');
 <div x-data="window.justCheckMeOutApiV1.component.createPlaceOrder()">
     <?= $components->render('atom/button', [
         'text' => 'Place Order',
-        'attributes' => ['type' => 'button', '@click' => 'await placeAndGoNext()']
+        'attributes' => [
+            'type' => 'button',
+            ':disabled' => '!interactive',
+            '@click' => 'await placeAndGoNext()',
+        ]
     ]) ?>
 </div>

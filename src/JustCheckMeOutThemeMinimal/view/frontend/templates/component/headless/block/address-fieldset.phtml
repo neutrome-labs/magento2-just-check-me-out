@@ -9,10 +9,16 @@ use PerspectiveTeam\JustCheckMeOut\Block\Headless;
 
 
 foreach ($block->getData('fields') as $key => $data) {
-    echo $block->headlessComponentRenderer->render('block/input-text', [
+    $html = $block->headlessComponentRenderer->render('block/input-text', [
         'label' => array_key_exists('label', $data) ? $data['label'] : null,
         'attributes' => array_merge(array_diff_key($data, array_flip(['label'])) ?? [], [
             'name' => $key,
         ])
     ], 'justcheckmeout.onepage.address-fieldset.input-' . $key);
+    echo <<<HTML
+<div class="mb-4">
+    $html
+</div>
+HTML;
+
 }

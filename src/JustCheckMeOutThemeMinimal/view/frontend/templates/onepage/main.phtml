@@ -1,0 +1,50 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+
+/** @var HeadlessComponentRenderer $components */
+$components = $block->getData('headlessComponentRenderer');
+?>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @tailwind base; /* Preflight will be injected here */
+    @tailwind components;
+    @tailwind utilities;
+</style>
+<div class="w-full flex justify-center">
+    <div class="w-2/3 p-8 bg-[#fafafa]">
+        <div class="w-2/3 ml-auto mr-8 flex flex-col gap-3">
+            <div>
+                <?= $components->render('block/messages', [
+                    'scope' => 'main',
+                ], 'justcheckmeout.onepage.main.messages') ?>
+            </div>
+            <section>
+                <header><h2 class="text-2xl font-semibold">Shipping</h2></header>
+                <div class="flex flex-col gap-3">
+                    <?= $block->getChildHtml('unified-address-form') ?>
+                    <?= $block->getChildHtml('shipping-method-list') ?>
+                </div>
+            </section>
+            <section>
+                <header><h2 class="text-2xl font-semibold">Payment</h2></header>
+                <?= $block->getChildHtml('payment-method-list') ?>
+            </section>
+        </div>
+    </div>
+    <div class="w-1/3 p-8 border-gray-lighter bg-neutral-100 border-l">
+        <div class="md:max-w-[38.125rem] md:mx-auto lg:mr-0 lg:max-w-none max-w-none">
+            <section class="md:sticky top-0 md:p-5 flex flex-col gap-3">
+                <?= $block->getChildHtml('items') ?>
+                <?= $block->getChildHtml('totals') ?>
+                <?= $block->getChildHtml('place-button') ?>
+            </section>
+        </div>
+    </div>
+</div>

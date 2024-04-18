@@ -1,0 +1,46 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use PerspectiveTeam\JustCheckMeOut\Block\Headless;
+
+/** @var Headless $block */
+/** @var Escaper $escaper */
+?>
+
+<template x-for="item in <?= $block->getData('alpine/expr/items') ?>"
+          :key="<?= $block->getData('alpine/expr/value') ?>">
+    <div>
+        <div class="first:rounded-tl first:rounded-tr last:rounded-bl last:rounded-br overflow-hidden inactive">
+            <div class="flex gap-x-4 p-4 border border-gray-input"
+                 @click="<?= $block->getData('alpine/expr/select') ?>">
+                <div class="flex items-center">
+                    <input class="flex-none disabled:opacity-25"
+                           type="radio"
+                           name="<?= $block->getData('key') ?>"
+                           :value="<?= $block->getData('alpine/expr/value') ?>"
+                           :checked="<?= $block->getData('alpine/expr/current') ?> === $el.value"
+                           @click="<?= $block->getData('alpine/expr/select') ?>"
+                        <?= $block->getData('alpine/expr/disabled')
+                            ? ':disabled="' . $block->getData('alpine/expr/disabled') . '"'
+                            : ''
+                        ?>>
+                </div>
+
+                <label class="flex justify-between cursor-pointer w-full relative space-x-4"
+                       for="payment-method-instant_installment">
+                    <div class="text-gray-700 flex flex-col">
+                        <span x-text="<?= $block->getData('alpine/expr/label') ?>"></span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <?php if ($block->getData('alpine/expr/details')): ?>
+            <template
+                x-if="<?= $block->getData('alpine/expr/details') ?> && <?= $block->getData('alpine/expr/current') ?> === <?= $block->getData('alpine/expr/value') ?>">
+                <div class="my-3" x-html="<?= $block->getData('alpine/expr/details') ?>"></div>
+            </template>
+        <?php endif; ?>
+    </div>
+</template>

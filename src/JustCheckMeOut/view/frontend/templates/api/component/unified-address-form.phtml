@@ -11,22 +11,27 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.component.createUnifiedAddressForm = function (customerEmailFormEl) {
-        const shippingAddressComponent = window.psteamJustCheckMeOutApiV1.component.createQuoteShippingAddressForm();
-        shippingAddressComponent._save = shippingAddressComponent.save;
+    window.justCheckMeOutApiV1.component.createUnifiedAddressForm = function (customerEmailFormEl) {
+        const shippingAddressComponent = window.justCheckMeOutApiV1.component.createQuoteShippingAddressForm();
+        shippingAddressComponent.saveShippingAddress = shippingAddressComponent.save;
 
         return {
             ...shippingAddressComponent,
             customerEmailFormEl,
+            unifiedInteractive: true,
             save: async function () {
-                await this.customerEmailFormEl._x_dataStack[0].save(); // todo: +- ok
-                await this._save();
+                try {
+                    this.unifiedInteractive = false;
+                    await this.customerEmailFormEl._x_dataStack[0].save(); // todo: +- ok
+                    await this.saveShippingAddress();
+                } finally {
+                    this.unifiedInteractive = true;
+                }
             }
         };
     }

@@ -24,11 +24,6 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
 <form id="<?= $formId ?>" x-data="window.justCheckMeOutApiV1.component.createUnifiedAddressForm(
     document.querySelector(<?= "`#$formId > div[x-ref=email]`" ?>)
 )" @submit.prevent="await save()">
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh addresses',
-        'attributes' => ['type' => 'button', '@click' => 'await addressBookGqlWrapper.refresh()']
-    ]) ?>
-
     <ul>
         <template x-for="address in addressesFromAddressBook()" :key="address.id">
             <li>
@@ -54,30 +49,23 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
                 </p>
             </li>
         </template>
-        <li>
-            <p>
-                <input type="radio"
-                       name="<?= $addressesRadioListKey ?>"
-                       value="0"
-                       :checked="!selectedAddressId"
-                       @click="await selectAddressFromBook(null)"
-                />
-                <span>Use new address</span>
-            </p>
-        </li>
+        <template x-if="addressesFromAddressBook().length">
+            <li>
+                <hr>
+                <p>
+                    <input type="radio"
+                           name="<?= $addressesRadioListKey ?>"
+                           value="0"
+                           :checked="!selectedAddressId"
+                           @click="await selectAddressFromBook(null)"
+                    />
+                    <span>Use new address</span>
+                </p>
+            </li>
+        </template>
     </ul>
 
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh address form',
-        'attributes' => ['type' => 'button', '@click' => 'await addressGqlWrapper.refresh()']
-    ]) ?>
-
-    <div x-data="window.justCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
-        <?= $components->render('atom/button', [
-            'text' => '[dev] refresh customer data',
-            'attributes' => ['type' => 'button', '@click' => 'await emailGqlWrapper.refresh()']
-        ]) ?>
-
+    <div class="mb-4" x-data="window.justCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
         <?= $components->render('block/input-text', [
             'label' => 'Email',
             'attributes' => [
@@ -86,6 +74,8 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
                 'required' => 1,
                 'value' => $address->getEmail(),
                 'x-model' => 'displayEmail',
+                ':disabled' => '!interactive',
+                '@focusout' => 'await save()',
             ]
         ], 'justcheckmeout.onepage.customer-email-form.input-email') ?>
     </div>
@@ -96,48 +86,58 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
                 'required' => 1,
                 'label' => 'First Name',
                 'value' => $address->getFirstname(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.firstname',
             ],
             'lastname' => [
                 'required' => 1,
                 'label' => 'Last Name',
                 'value' => $address->getLastname(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.lastname',
             ],
             'telephone' => [
                 'label' => 'Telephone',
                 'value' => $address->getTelephone(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.telephone',
             ],
             'country' => [
                 'required' => 1,
                 'label' => 'Country',
                 'value' => $address->getCountryId(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.country_code',
             ],
             'city' => [
                 'required' => 1,
                 'label' => 'City',
                 'value' => $address->getCity(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.city',
             ],
             'postcode' => [
                 'required' => 1,
                 'label' => 'Postcode',
                 'value' => $address->getPostcode(),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.postcode',
             ],
             'street_1' => [
                 'required' => 1,
                 'label' => 'Street',
                 'value' => $address->getStreetLine(1),
+                ':disabled' => '!unifiedInteractive',
                 'x-model' => 'formData.street[0]',
             ],
         ]
     ]) ?>
 
     <?= $components->render('atom/button', [
-        'text' => '[dev] save explicitly',
-        'attributes' => ['type' => 'submit']
+        'text' => 'Save',
+        'attributes' => [
+            'type' => 'submit',
+            ':disabled' => '!unifiedInteractive',
+        ]
     ]) ?>
 </form>

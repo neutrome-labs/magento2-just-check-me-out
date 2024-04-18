@@ -17,7 +17,7 @@ $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.fn.fetchGql = async function (query, variables = {}) {
+    window.justCheckMeOutApiV1.fn.fetchGql = async function (query, variables = {}) {
         const r = await fetch('/graphql', {
             method: 'POST',
             headers: {
@@ -32,16 +32,13 @@ $quoteViewModel = $block->getData('quoteViewModel');
         return await r.json();
     }
 
-    window.psteamJustCheckMeOutApiV1.fn.createSsrGqlStub = function (query, variables, response = undefined, options = {
-        event: undefined,
-        callback: undefined
-    }) {
+    window.justCheckMeOutApiV1.fn.createSsrGqlStub = function (query, variables, response = undefined) {
         // todo: if debug
         if (response?.errors?.length > 0) {
             console.error('error resolving ssr graphql response: ', {
                 query,
                 variables,
-                errors: response.errors,
+                errors: response.errors.length === 1 ? response.errors[0] : response.errors,
             });
         }
 
@@ -54,36 +51,27 @@ $quoteViewModel = $block->getData('quoteViewModel');
             data: response?.data,
             errors: response?.errors,
             fetch: async function (variables) {
-                return await window.psteamJustCheckMeOutApiV1.fn.fetchGql(query, {
+                const r = await window.justCheckMeOutApiV1.fn.fetchGql(query, {
                     ...this.ssr.variables,
                     ...variables,
                 });
+
+                // todo: if debug
+                if (r.errors?.length > 0) {
+                    console.error('error fetching graphql response: ', {
+                        query,
+                        variables,
+                        errors: r.errors.length === 1 ? r.errors[0] : r.errors,
+                    });
+                }
+
+                return r;
             },
             refresh: async function () {
-                const callback = async r => {
-                    this.fresh = true;
-                    this.data = r?.data;
-                    this.errors = r?.errors;
-
-                    if (options.callback) {
-                        await options.callback(r);
-                    }
-
-                    // todo: if debug
-                    if (r?.errors?.length > 0) {
-                        console.error('error resolving graphql response: ', {
-                            query,
-                            variables,
-                            errors: r.errors,
-                        });
-                    }
-                };
-
-                if (options.event?.length > 0) {
-                    window.psteamJustCheckMeOutApiV1.bus.then(this.fetch(), options.event, callback);
-                } else {
-                    await callback(await this.fetch());
-                }
+                const r = await this.fetch();
+                this.fresh = true;
+                this.data = r?.data;
+                this.errors = r?.errors;
             }
         };
     }

@@ -2,14 +2,10 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\JustCheckMeOut\Block\Headless;
 
-/** @var Template $block */
+/** @var Headless $block */
 /** @var Escaper $escaper */
-
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
 ?>
 
 <div class="input-text">
@@ -18,7 +14,7 @@ $components = $block->getData('headlessComponentRenderer');
             <?= $label ?>
         </label>
     <?php endif; ?>
-    <?= $components->render('atom/input-text', [
+    <?= $block->headlessComponentRenderer->render('atom/input-text', [
         'attributes' => $block->getData('attributes') ?? []
     ]) ?>
 </div>

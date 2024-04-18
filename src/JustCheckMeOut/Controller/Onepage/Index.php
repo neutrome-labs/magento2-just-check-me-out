@@ -20,6 +20,12 @@ class Index implements HttpGetActionInterface
     /** @inheirtDoc */
     public function execute()
     {
-        return $this->pageFactory->create();
+        $page = $this->pageFactory->create();
+        $page->getLayout()->getUpdate();
+
+        $theme = 'minimal'; // todo: from config
+        $page->getLayout()->getUpdate()->addHandle("psteamjustcheckmeout_onepage_theme_$theme");
+
+        return $page;
     }
 }

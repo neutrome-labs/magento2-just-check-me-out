@@ -17,7 +17,7 @@ $components = $block->getData('headlessComponentRenderer');
 $radioListKey = uniqid('shipping_method_');
 ?>
 
-<form action="#" x-data="window.psteamJustCheckMeOutApiV1.component.createShippingMethodList()">
+<form action="#" x-data="window.justCheckMeOutApiV1.component.createShippingMethodList()">
     <template x-show="errors().length > 0">
         <ul style="border: 1px solid red">
             <template x-for="error in errors()">

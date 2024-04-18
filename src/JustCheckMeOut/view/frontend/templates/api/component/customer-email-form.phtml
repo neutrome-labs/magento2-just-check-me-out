@@ -11,13 +11,12 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
 /** @var QuoteViewModel $quoteViewModel */
 $quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.psteamJustCheckMeOutApiV1.component.createCustomerEmailForm = function () {
+    window.justCheckMeOutApiV1.component.createCustomerEmailForm = function () {
         <?php const UNIFIED_EMAIL_GQL = <<<GRAPHQL
 query unifiedEmail(\$cart_id: String!) {
   cart(cart_id: \$cart_id) {
@@ -43,6 +42,7 @@ mutation setGuestEmailOnCart(\$cart_id: String!, \$email: String!) {
 GRAPHQL; ?>
 
         return {
+            interactive: true,
             init: function () {
                 this.$watch('emailGqlWrapper', () => {
                     this.displayEmail = this.cartEmail() || this.customerEmail();
@@ -67,11 +67,11 @@ GRAPHQL; ?>
                 return !!this.customerEmail();
             },
             save: async function () {
-                if (this.customerIsLoggedIn()) {
+                if (this.customerIsLoggedIn() || this.displayEmail === this.cartEmail()) {
                     return;
                 }
 
-                await window.psteamJustCheckMeOutApiV1.fn.fetchGql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
+                await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
                     cart_id: this.emailGqlWrapper.ssr.variables.cart_id,
                     email: this.displayEmail,
                 });

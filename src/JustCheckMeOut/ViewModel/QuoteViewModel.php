@@ -10,7 +10,6 @@ use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 class QuoteViewModel implements ArgumentInterface
 {
 
-
     public function __construct(
         private readonly Session                $checkoutSession,
         private readonly QuoteIdToMaskedQuoteId $quoteIdToMaskedQuoteId

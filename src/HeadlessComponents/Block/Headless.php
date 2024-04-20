@@ -1,6 +1,6 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Block;
+namespace PerspectiveTeam\HeadlessComponents\Block;
 
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
@@ -15,6 +15,21 @@ class Headless extends Template
     )
     {
         parent::__construct($context, $data);
+    }
+
+    public function getSlug(): string
+    {
+        if (!$this->getData('slug')) {
+            $this->setData('slug', uniqid());
+            $this->setData('cache_lifetime', false);
+        }
+
+        return $this->getData('slug');
+    }
+
+    public function getNameInLayout()
+    {
+        return parent::getNameInLayout() ?? ("psteam_justcheckmeout.headless." . $this->getSlug());
     }
 
     public function getCacheKeyInfo()

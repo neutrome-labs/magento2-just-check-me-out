@@ -24,6 +24,11 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
 <form id="<?= $formId ?>" x-data="window.justCheckMeOutApiV1.component.createUnifiedAddressForm(
     document.querySelector(<?= "`#$formId > div[x-ref=email]`" ?>)
 )" @submit.prevent="await save()">
+    <div>
+        <?= $components->render('block/messages', [
+            'scope' => 'shipping-address',
+        ], 'justcheckmeout.onepage.shipping-address-form.messages') ?>
+    </div>
     <ul>
         <template x-for="address in addressesFromAddressBook()" :key="address.id">
             <li>
@@ -80,58 +85,209 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
         ], 'justcheckmeout.onepage.customer-email-form.input-email') ?>
     </div>
 
-    <?= $components->render('block/address-fieldset', [
-        'fields' => [
-            'firstname' => [
-                'required' => 1,
-                'label' => 'First Name',
-                'value' => $address->getFirstname(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.firstname',
-            ],
-            'lastname' => [
-                'required' => 1,
-                'label' => 'Last Name',
-                'value' => $address->getLastname(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.lastname',
-            ],
-            'telephone' => [
+    <div class="flex flex-col gap-4 mb-4"
+         x-data="{regions: undefined}"
+    >
+        <span></span> <!-- form spacing -->
+
+        <div class="w-full flex gap-4">
+            <div class="w-1/2">
+                <?= $components->render('block/input-text', [
+                    'label' => 'Firstname',
+                    'attributes' => [
+                        'name' => 'firstname',
+                        'required' => 1,
+                        'value' => $address->getFirstname(),
+                        ':disabled' => '!unifiedInteractive',
+                        'x-model' => 'formData.firstname',
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-firstname') ?>
+            </div>
+
+            <div class="w-1/2">
+                <?= $components->render('block/input-text', [
+                    'label' => 'Lastname',
+                    'attributes' => [
+                        'name' => 'lastname',
+                        'required' => 1,
+                        'value' => $address->getLastname(),
+                        ':disabled' => '!unifiedInteractive',
+                        'x-model' => 'formData.lastname',
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-lastname') ?>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <?= $components->render('block/input-text', [
                 'label' => 'Telephone',
-                'value' => $address->getTelephone(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.telephone',
-            ],
-            'country' => [
-                'required' => 1,
-                'label' => 'Country',
-                'value' => $address->getCountryId(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.country_code',
-            ],
-            'city' => [
-                'required' => 1,
-                'label' => 'City',
-                'value' => $address->getCity(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.city',
-            ],
-            'postcode' => [
-                'required' => 1,
-                'label' => 'Postcode',
-                'value' => $address->getPostcode(),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.postcode',
-            ],
-            'street_1' => [
-                'required' => 1,
+                'attributes' => [
+                    'name' => 'telephone',
+                    'required' => 1,
+                    'value' => $address->getTelephone(),
+                    ':disabled' => '!unifiedInteractive',
+                    'x-model' => 'formData.telephone',
+                ]
+            ], 'justcheckmeout.onepage.shipping-address-form.input-telephone') ?>
+        </div>
+
+        <span></span> <!-- form spacing -->
+
+        <div class="w-full flex gap-4">
+            <div class="w-1/2">
+                <?= $components->render('block/input-select', [
+                    'label' => 'Country',
+                    'alpine' => [
+                        'props' => <<<JS
+{
+    selectedId: formData.country_code,
+    initImpl: async function () {
+        await this.search('');
+        const regions = this.options.find(o => o.id === this.selectedId)?.regions;
+        if (regions?.length > 0) {
+            this.regions = regions;
+            this.formData.region = null;
+        }
+    },
+    searchImpl: async text => {
+        const r = await window.justCheckMeOutApiV1.fn.fetchGql(
+            `query {
+  countries {
+    id
+    full_name_locale
+    available_regions {
+      id
+      code
+      name
+    }
+  }
+}`);
+        return r?.data?.countries?.map(x => {
+            return {
+                id: x.id,
+                label: x.full_name_locale,
+                regions: x.available_regions?.map(r => {
+                    return {
+                        id: r.id,
+                        label: r.name,
+                        code: r.code,
+                    };
+                }),
+            };
+        }) ?? [];
+    }
+}
+JS,
+                    ],
+                    'attributes' => [
+                        'wrapper' => [
+                            'x-model' => 'formData.country_code',
+                        ],
+                        'input' => [
+                            'name' => 'country_code',
+                            'required' => 1,
+                            ':disabled' => '!unifiedInteractive',
+                            '@change' => <<<JS
+regions = options.find(o => o.id === \$el.value)?.regions;
+formData.region_id = null;
+formData.region = null;
+formData.city = null;
+formData.postcode = null;
+formData.street = [];
+JS,
+                        ],
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-country_code') ?>
+
+            </div>
+
+            <div class="w-1/2" x-show="regions?.length > 0">
+                <?= $components->render('block/input-select', [
+                    'label' => 'Region',
+                    'alpine' => [
+                        'props' => <<<JS
+{
+    selectedId: formData.region_id,
+    initImpl: function () {
+        this.\$watch('regions', async x => {
+            await this.search('');
+        });
+    },
+    searchImpl: async function (text) {
+        return this.regions ?? [];
+    }
+}
+JS,
+                    ],
+                    'attributes' => [
+                        'wrapper' => [
+                            'x-model' => 'formData.region_id',
+                        ],
+                        'input' => [
+                            'name' => 'region_id',
+                            ':required' => 'regions?.length > 0',
+                            ':disabled' => '!unifiedInteractive',
+                            '@change' => 'formData.region = null',
+                        ],
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-region_id') ?>
+            </div>
+
+            <div class="w-1/2" x-show="!regions || regions.length === 0">
+                <?= $components->render('block/input-text', [
+                    'label' => 'Region',
+                    'attributes' => [
+                        'name' => 'region',
+                        ':required' => '!regions || regions.length === 0',
+                        'value' => $address->getRegion(),
+                        ':disabled' => '!unifiedInteractive',
+                        'x-model' => 'formData.region',
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-region') ?>
+            </div>
+        </div>
+
+        <div class="w-full flex gap-4">
+            <div class="w-1/2">
+                <?= $components->render('block/input-text', [
+                    'label' => 'City',
+                    'attributes' => [
+                        'name' => 'city',
+                        'required' => 1,
+                        'value' => $address->getCity(),
+                        ':disabled' => '!unifiedInteractive',
+                        'x-model' => 'formData.city',
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-city') ?>
+            </div>
+
+            <div class="w-1/2">
+                <?= $components->render('block/input-text', [
+                    'label' => 'Postcode',
+                    'attributes' => [
+                        'name' => 'postcode',
+                        'required' => 1,
+                        'value' => $address->getPostcode(),
+                        ':disabled' => '!unifiedInteractive',
+                        'x-model' => 'formData.postcode',
+                    ]
+                ], 'justcheckmeout.onepage.shipping-address-form.input-postcode') ?>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <?= $components->render('block/input-text', [
                 'label' => 'Street',
-                'value' => $address->getStreetLine(1),
-                ':disabled' => '!unifiedInteractive',
-                'x-model' => 'formData.street[0]',
-            ],
-        ]
-    ]) ?>
+                'attributes' => [
+                    'name' => 'street_1',
+                    'required' => 1,
+                    'value' => $address->getStreetLine(1),
+                    ':disabled' => '!unifiedInteractive',
+                    'x-model' => 'formData.street[0]',
+                ]
+            ], 'justcheckmeout.onepage.shipping-address-form.input-street_1') ?>
+        </div>
+    </div>
 
     <?= $components->render('atom/button', [
         'text' => 'Save',

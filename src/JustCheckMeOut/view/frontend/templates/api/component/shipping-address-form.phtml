@@ -30,6 +30,10 @@ query customerAddresses {
       firstname
       lastname
       country_code
+      region {
+        region_id
+        region
+      }
       city
       postcode
       street
@@ -47,6 +51,10 @@ query shippingAddresses(\$cart_id: String!) {
       telephone
       country {
         code
+      }
+      region {
+        region_id
+        label
       }
       city
       postcode
@@ -88,6 +96,10 @@ mutation setShippingAddress(\$cart_id: String!, \$customer_address_id: Int, \$ad
         country {
           code
         }
+        region {
+          region_id
+          label
+        }
         city
         postcode
         street
@@ -114,6 +126,8 @@ GRAPHQL; ?>
                     lastname: address?.lastname ?? '',
                     telephone: address?.telephone ?? '',
                     country_code: address?.country_code ?? address?.country?.code ?? '<?= '' // todo: get default country from config ?>',
+                    region_id: address?.region?.region_id ?? null,
+                    region: address?.region?.region ?? address?.region?.label ?? '',
                     city: address?.city ?? '',
                     postcode: address?.postcode ?? '',
                     street: address?.street ?? [],
@@ -143,7 +157,15 @@ GRAPHQL; ?>
                 return this.extractFormDataFromAddressModel(address);
             },
             tryExtractFormErrorsFromGqlData: function (errors) {
-                return [];
+                if (errors?.length > 0) {
+                    for (const e of errors) {
+                        this.$dispatch('justcheckmeout-message-shipping-address', {
+                            type: 'error',
+                            text: e.message,
+                        });
+                    }
+                }
+                return {};
             },
 
             init: function () {

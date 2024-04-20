@@ -24,6 +24,7 @@ $radioListKey = uniqid('shipping_method_');
 
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
+        'empty' => 'No shipping methods available',
         'alpine' => [
             'expr' => [
                 'disabled' => '!interactive',

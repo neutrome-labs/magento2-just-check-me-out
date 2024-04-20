@@ -26,14 +26,14 @@ $components = $block->getData('headlessComponentRenderer');
                 ], 'justcheckmeout.onepage.main.messages') ?>
             </div>
             <section>
-                <header><h2 class="text-2xl font-semibold">Shipping</h2></header>
+                <header><h2 class="text-2xl font-semibold mb-5">Shipping</h2></header>
                 <div class="flex flex-col gap-3">
                     <?= $block->getChildHtml('unified-address-form') ?>
                     <?= $block->getChildHtml('shipping-method-list') ?>
                 </div>
             </section>
             <section>
-                <header><h2 class="text-2xl font-semibold">Payment</h2></header>
+                <header><h2 class="text-2xl font-semibold mb-5">Payment</h2></header>
                 <?= $block->getChildHtml('payment-method-list') ?>
             </section>
         </div>

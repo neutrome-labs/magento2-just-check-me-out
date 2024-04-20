@@ -115,6 +115,13 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
                 'value' => $address->getCountryId(),
                 'x-model' => 'formData.country_code',
             ],
+            'country2' => [
+                'template' => 'block/input-select',
+                'required' => 1,
+                'label' => 'Country',
+                'value' => $address->getCountry(),
+                'x-model' => 'formData.country_code',
+            ],
             'city' => [
                 'required' => 1,
                 'label' => 'City',

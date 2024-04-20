@@ -8,7 +8,7 @@ use PerspectiveTeam\JustCheckMeOut\Block\Headless;
 /** @var Escaper $escaper */
 ?>
 
-<template x-for="item in <?= $block->getData('alpine/expr/items') ?>"
+<template x-for="item in <?= $block->getData('alpine/expr/items') ?? [] ?>"
           :key="<?= $block->getData('alpine/expr/value') ?>">
     <div>
         <div class="first:rounded-tl first:rounded-tr last:rounded-bl last:rounded-br overflow-hidden inactive">
@@ -42,5 +42,10 @@ use PerspectiveTeam\JustCheckMeOut\Block\Headless;
                 <div class="my-3" x-html="<?= $block->getData('alpine/expr/details') ?>"></div>
             </template>
         <?php endif; ?>
+    </div>
+</template>
+<template x-if="!(<?= $block->getData('alpine/expr/items') ?>?.length > 0)">
+    <div class="text-center text-gray-700 p-4">
+        <?= $escaper->escapeHtml($block->getData('empty')) ?>
     </div>
 </template>

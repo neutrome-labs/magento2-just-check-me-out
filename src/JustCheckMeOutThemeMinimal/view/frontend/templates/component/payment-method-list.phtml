@@ -24,6 +24,7 @@ $radioListKey = uniqid('payment_method_');
 
     <?= $components->render('block/radio-list-with-details', [
         'key' => $radioListKey,
+        'empty' => 'No payment methods available',
         'alpine' => [
             'expr' => [
                 'disabled' => '!interactive',

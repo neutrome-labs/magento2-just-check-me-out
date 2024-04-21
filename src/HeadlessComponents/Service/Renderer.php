@@ -2,7 +2,6 @@
 
 namespace PerspectiveTeam\HeadlessComponents\Service;
 
-use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\View\LayoutInterface;
 use PerspectiveTeam\HeadlessComponents\Api\ThemeInterface;
 use PerspectiveTeam\HeadlessComponents\Api\ThemeManagerInterface;
@@ -13,22 +12,22 @@ class Renderer
 {
 
     public function __construct(
-        private readonly LayoutInterface $layout,
-        private readonly HeadlessFactory $blockFactory,
+        private readonly LayoutInterface       $layout,
+        private readonly HeadlessFactory       $blockFactory,
         private readonly ThemeManagerInterface $themeManager,
     )
     {
     }
 
-    private function isShortTemplate(string $template): bool
+    public function isShortTemplate(string $template): bool
     {
         return !str_contains($template, '::');
     }
 
-    private function createBlockInstance(
-        array  $data,
+    public function createBlockInstance(
+        array   $data,
         ?string $slug,
-        int    $cacheLifetime
+        int     $cacheLifetime
     ): Headless
     {
         return $this->blockFactory
@@ -44,27 +43,26 @@ class Renderer
         $theme = $theme ?? $this->themeManager->current();
 
         if ($template && $this->isShortTemplate($template)) {
-            $fullTemplate = $theme->getModule() . "::component/headless/$template.phtml";
+            $fullTemplate = $theme->getModule() . "::$template.phtml";
         }
 
-        try {
-            if (isset($fullTemplate) && $fullTemplate) {
-                $block->setTemplate($fullTemplate);
-            } else if ($template) {
-                $block->setTemplate($template);
-            }
-            return $block->toHtml();
-        } catch (ValidatorException $e) { // todo: is not thrown in production mode
+        if (isset($fullTemplate) && $fullTemplate) {
+            $block->setTemplate($fullTemplate);
+        } else if ($template) {
+            $block->setTemplate($template);
+        }
+
+        if (!$block->getTemplateFile()) {
             if (
                 isset($fullTemplate)
-                && str_starts_with($e->getMessage(), 'Invalid template file')
                 && $theme->getParent()
                 && ($parentTheme = $this->themeManager->find($theme->getParent()))
             ) {
                 return $this->renderRecursive($block, $template, $parentTheme);
             }
-            throw $e;
         }
+
+        return $block->toHtml();
     }
 
     public function render(
@@ -75,7 +73,7 @@ class Renderer
     ): string
     {
         $possibleScriptCompanionTemplate = $this->isShortTemplate($template)
-            ?  "$template.script"
+            ? "$template.script"
             : str_replace('.phtml', '.script.phtml', $template);
 
         $html = '';
@@ -89,12 +87,8 @@ class Renderer
         // side effect: sets proper template before inserting into layout
         try {
             $canRenderCompanion = (bool)$this->renderRecursive($scriptCompanionBlock, $possibleScriptCompanionTemplate);
-        } catch (ValidatorException $e) {
-            if (str_starts_with($e->getMessage(), 'Invalid template file')) {
-                $canRenderCompanion = false;
-            } else {
-                throw $e;
-            }
+        } catch (\Exception $e) {
+            $canRenderCompanion = false;
         }
 
         if ($canRenderCompanion) {

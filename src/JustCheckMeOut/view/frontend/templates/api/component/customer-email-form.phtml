@@ -71,7 +71,7 @@ GRAPHQL; ?>
                     return;
                 }
 
-                await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
+                await window.fetchMagento2Gql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
                     cart_id: this.emailGqlWrapper.ssr.variables.cart_id,
                     email: this.displayEmail,
                 });

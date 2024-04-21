@@ -37,6 +37,14 @@ class HeadlessComponentRenderer implements ArgumentInterface
         int     $cacheLifetime = 60 * 60 * 24
     ): string
     {
+        if ($this->getRenderer()->isShortTemplate($template)) {
+            $template = 'component/headless/' . $template;
+        }
+
+        if (strlen($slug ?? '') > 0) {
+            $slug = 'justcheckmeout.' . $slug;
+        }
+
         return $this->getRenderer()->render($template, $data, $slug, $cacheLifetime);
     }
 }

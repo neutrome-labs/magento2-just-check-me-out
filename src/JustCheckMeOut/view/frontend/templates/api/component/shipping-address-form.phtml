@@ -210,13 +210,13 @@ GRAPHQL; ?>
 
                     let r = undefined;
                     if (!this.selectedAddressId) {
-                        r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                        r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
                             cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
                             address: this.formData,
                         });
                     } else {
                         // todo: save current customer address data
-                        r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
+                        r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
                             cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
                             customer_address_id: this.selectedAddressId,
                         });

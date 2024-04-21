@@ -2,45 +2,45 @@
 
 namespace PerspectiveTeam\SsrGraphql\ViewModel;
 
+use Magento\Framework\Async\DeferredInterface;
+use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use PerspectiveTeam\SsrGraphql\Model\Resolver;
 
 class SsrGraphqlViewModel implements ArgumentInterface
 {
 
+    private array $deferred = [];
+
     public function __construct(
+        private readonly StoreManagerInterface $storeManager,
         private readonly Resolver $resolver,
     )
     {
     }
 
-    public function getBaseUrl(): string
+    public function getDeferred(string $key): ?DeferredInterface
     {
-        return $this->resolver->getGraphqlBaseUrl();
+        return array_key_exists($key, $this->deferred) ? $this->deferred[$key] : null;
     }
 
-    public function makeSsrGqlCall(string $query, array $variables = [], $options = null): string
+    public function getBaseUrl(): string
     {
-        try {
-            $response = $this->resolver->resolve($query, $variables);
-        } catch (\Exception $e) {
-            $text = $e->getMessage();
-            $response = [
-                'errors' => [
-                    [
-                        'message' => "An error occurred while resolving the query on the server: $text",
-                    ]
-                ]
-            ];
-        }
+        return $this->storeManager->getStore()->getBaseUrl();
+    }
 
-        $response = json_encode($response);
+    public function makeSsrGqlCall(string $query, array $variables = [], $options = null)
+    {
+        $uid = uniqid('PSTEAM_GQL_');
+        $this->deferred[$uid] = $this->resolver->deferResolve($query, $variables);
+
         $query = json_encode($query);
         $variables = json_encode($variables);
         $options = $options !== null ? json_encode($options) : '';
 
         return <<<JS
-window.createMagento2SsrGqlStub($query, $variables, $response, $options)
+window.createMagento2SsrGqlStub($query, $variables, %{$uid}%, $options)
 JS;
     }
 }

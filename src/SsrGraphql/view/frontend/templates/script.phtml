@@ -14,7 +14,7 @@ $gql = $block->getData('ssrGqlViewModel');
 
 <script>
     window.fetchMagento2Gql = async function (query, variables = {}) {
-        const r = await fetch('<?= $gql->getBaseUrl() ?>/graphql', {
+        const r = await fetch('<?= $gql->getBaseUrl() ?>graphql', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -50,7 +50,7 @@ GRAPHQL;
                         };
 
                     if (!result.preventDefault) {
-                        const r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= PLACE_ORDER_GQL ?>`, {
+                        const r = await window.fetchMagento2Gql(`<?= PLACE_ORDER_GQL ?>`, {
                             card_id: window.justCheckMeOutApiV1.globals.getCartId(),
                         });
                         result.orderNumber = r?.data?.placeOrder?.order?.order_number;

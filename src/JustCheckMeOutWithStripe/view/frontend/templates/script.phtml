@@ -64,7 +64,7 @@ $components = $block->getData('headlessComponentRenderer');
     };
 
     var getStripeModuleConfiguration = function () {
-        window.justCheckMeOutApiV1.fn.fetchGql(moduleConfigurationQuery).then(function (response) {
+        window.fetchMagento2Gql(moduleConfigurationQuery).then(function (response) {
             stripeVariables = response.data.getStripeConfiguration;
             initPaymentElement();
         });
@@ -124,7 +124,7 @@ $components = $block->getData('headlessComponentRenderer');
                 return xresult;
             }
 
-            const response = await window.justCheckMeOutApiV1.fn.fetchGql(`mutation {
+            const response = await window.fetchMagento2Gql(`mutation {
     setPaymentMethodOnCart(input: {
       cart_id: "${window.justCheckMeOutApiV1.globals.getCartId()}"
       payment_method: {

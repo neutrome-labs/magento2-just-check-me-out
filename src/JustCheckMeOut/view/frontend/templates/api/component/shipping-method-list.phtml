@@ -139,7 +139,7 @@ GRAPHQL;
                 try {
                     this.interactive = false;
 
-                    const r = await window.justCheckMeOutApiV1.fn.fetchGql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
+                    const r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
                         card_id: window.justCheckMeOutApiV1.globals.getCartId(),
                         carrier: method.carrier_code,
                         method: method.method_code,

@@ -150,7 +150,7 @@ $addressesRadioListKey = uniqid('customer-shipping-address-')
         }
     },
     searchImpl: async text => {
-        const r = await window.justCheckMeOutApiV1.fn.fetchGql(
+        const r = await window.fetchMagento2Gql(
             `query {
   countries {
     id

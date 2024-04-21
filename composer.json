@@ -6,7 +6,7 @@
     "require": {
         "magento/framework": "*",
         "magento/module-checkout": "*",
-        "magento/module-quote-graphql": "*"
+        "magento/module-quote-graph-ql": "*"
     },
     "license": [
         "Proprietary"
@@ -14,12 +14,16 @@
     "autoload": {
         "files": [
             "src/SsrGraphql/registration.php",
+            "src/SsrGraphql/registration.php",
             "src/JustCheckMeOut/registration.php",
+            "src/JustCheckMeOutThemeMinimal/registration.php",
             "src/JustCheckMeOutWithStripe/registration.php"
         ],
         "psr-4": {
             "PerspectiveTeam\\SsrGraphql\\": "src/SsrGraphql/",
+            "PerspectiveTeam\\HeadlessComponents\\": "src/HeadlessComponents/",
             "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/",
+            "PerspectiveTeam\\JustCheckMeOutThemeMinimal\\": "src/JustCheckMeOutThemeMinimal/",
             "PerspectiveTeam\\JustCheckMeOutWithStripe\\": "src/JustCheckMeOutWithStripe/"
         }
     },

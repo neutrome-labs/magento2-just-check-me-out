@@ -9,7 +9,7 @@ use PerspectiveTeam\HeadlessComponents\Api\ThemeManagerInterface;
 use PerspectiveTeam\HeadlessComponents\Block\Headless;
 use PerspectiveTeam\HeadlessComponents\Block\HeadlessFactory;
 
-class HeadlessComponentRenderer
+class Renderer
 {
 
     public function __construct(

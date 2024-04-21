@@ -13,7 +13,7 @@
                    template="PerspectiveTeam_JustCheckMeOut::api.phtml">
                 <arguments>
                     <argument name="ssrGqlViewModel"
-                              xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel
+                              xsi:type="object">PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel
                     </argument>
                     <argument name="quoteViewModel"
                               xsi:type="object">PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel

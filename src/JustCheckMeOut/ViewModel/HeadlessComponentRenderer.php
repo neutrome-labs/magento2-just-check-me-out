@@ -3,22 +3,23 @@
 namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
-use PerspectiveTeam\HeadlessComponents\Service\HeadlessComponentRendererFactory;
+use PerspectiveTeam\HeadlessComponents\Service\Renderer;
+use PerspectiveTeam\HeadlessComponents\Service\RendererFactory;
 use PerspectiveTeam\JustCheckMeOut\Service\HeadlessThemeManager;
 
 class HeadlessComponentRenderer implements ArgumentInterface
 {
 
-    private ?\PerspectiveTeam\HeadlessComponents\Service\HeadlessComponentRenderer $renderer = null;
+    private ?Renderer $renderer = null;
 
     public function __construct(
         private readonly HeadlessThemeManager $themeManager,
-        private readonly HeadlessComponentRendererFactory $rendererFactory
+        private readonly RendererFactory      $rendererFactory
     )
     {
     }
 
-    public function getRenderer(): \PerspectiveTeam\HeadlessComponents\Service\HeadlessComponentRenderer
+    public function getRenderer(): Renderer
     {
         if (!$this->renderer) {
             $this->renderer = $this->rendererFactory->create([

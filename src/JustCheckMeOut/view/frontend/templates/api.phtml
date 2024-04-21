@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
@@ -70,7 +70,6 @@ $innerBlockData = [
 ];
 
 $innerBlocks = [
-    'fn/graphql',
     'component/customer-email-form',
     'component/shipping-address-form',
     'component/unified-address-form',

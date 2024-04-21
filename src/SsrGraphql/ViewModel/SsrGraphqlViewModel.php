@@ -1,17 +1,22 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
+namespace PerspectiveTeam\SsrGraphql\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
-use PerspectiveTeam\SsrGraphql\Model\SsrResolver;
+use PerspectiveTeam\SsrGraphql\Model\Resolver;
 
 class SsrGraphqlViewModel implements ArgumentInterface
 {
 
     public function __construct(
-        private readonly SsrResolver $resolver,
+        private readonly Resolver $resolver,
     )
     {
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->resolver->getGraphqlBaseUrl();
     }
 
     public function makeSsrGqlCall(string $query, array $variables = [], $options = null): string
@@ -35,7 +40,7 @@ class SsrGraphqlViewModel implements ArgumentInterface
         $options = $options !== null ? json_encode($options) : '';
 
         return <<<JS
-window.justCheckMeOutApiV1.fn.createSsrGqlStub($query, $variables, $response, $options)
+window.createMagento2SsrGqlStub($query, $variables, $response, $options)
 JS;
     }
 }

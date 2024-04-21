@@ -3,26 +3,21 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\SsrGraphqlViewModel;
+use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
 
 /** @var SsrGraphqlViewModel $gql */
 $gql = $block->getData('ssrGqlViewModel');
-
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
-    window.justCheckMeOutApiV1.fn.fetchGql = async function (query, variables = {}) {
-        const r = await fetch('/graphql', {
+    window.fetchMagento2Gql = async function (query, variables = {}) {
+        const r = await fetch('<?= $gql->getBaseUrl() ?>/graphql', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 query,
@@ -32,7 +27,7 @@ $quoteViewModel = $block->getData('quoteViewModel');
         return await r.json();
     }
 
-    window.justCheckMeOutApiV1.fn.createSsrGqlStub = function (query, variables, response = undefined) {
+    window.createMagento2SsrGqlStub = function (query, variables, response = undefined) {
         // todo: if debug
         if (response?.errors?.length > 0) {
             console.error('error resolving ssr graphql response: ', {
@@ -51,7 +46,7 @@ $quoteViewModel = $block->getData('quoteViewModel');
             data: response?.data,
             errors: response?.errors,
             fetch: async function (variables) {
-                const r = await window.justCheckMeOutApiV1.fn.fetchGql(query, {
+                const r = await window.fetchMagento2Gql(query, {
                     ...this.ssr.variables,
                     ...variables,
                 });

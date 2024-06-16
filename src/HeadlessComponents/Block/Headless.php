@@ -3,18 +3,24 @@
 namespace PerspectiveTeam\HeadlessComponents\Block;
 
 use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use PerspectiveTeam\HeadlessComponents\Service\AttributesHtmlGenerator;
+use PerspectiveTeam\HeadlessComponents\Service\Renderer;
 
 class Headless extends Template
 {
 
     public function __construct(
-        public readonly HeadlessComponentRenderer $headlessComponentRenderer,
-        Template\Context                          $context,
-        array                                     $data = []
+        public readonly AttributesHtmlGenerator $attributesHtmlGenerator,
+        public readonly Template\Context        $context,
+        array                                   $data = []
     )
     {
         parent::__construct($context, $data);
+    }
+
+    public function getRenderer(): Renderer
+    {
+        return $this->getData('renderer');
     }
 
     public function getSlug(): string
@@ -29,7 +35,7 @@ class Headless extends Template
 
     public function getNameInLayout()
     {
-        return parent::getNameInLayout() ?? ("psteam_justcheckmeout.headless." . $this->getSlug());
+        return parent::getNameInLayout() ?? ("headless." . $this->getSlug());
     }
 
     public function getCacheKeyInfo()

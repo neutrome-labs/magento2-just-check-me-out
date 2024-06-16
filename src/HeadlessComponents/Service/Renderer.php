@@ -11,6 +11,8 @@ use PerspectiveTeam\HeadlessComponents\Block\HeadlessFactory;
 class Renderer
 {
 
+    private array $bakedSingletonCompanions = [];
+
     public function __construct(
         private readonly LayoutInterface       $layout,
         private readonly HeadlessFactory       $blockFactory,
@@ -33,6 +35,7 @@ class Renderer
         return $this->blockFactory
             ->create()
             ->setData(array_merge([
+                'renderer' => $this,
                 'slug' => $slug,
                 'cache_lifetime' => $cacheLifetime,
             ], $data));
@@ -69,7 +72,8 @@ class Renderer
         string  $template,
         array   $data = [],
         ?string $slug = null,
-        int     $cacheLifetime = 60 * 60 * 24
+        int     $cacheLifetime = 60 * 60 * 24,
+        string $scriptLayoutParent = 'before.body.end'
     ): string
     {
         $possibleScriptCompanionTemplate = $this->isShortTemplate($template)
@@ -80,7 +84,7 @@ class Renderer
 
         $scriptCompanionBlock = $this->createBlockInstance(
             $data,
-            $slug . '-script',
+            $slug . '_script',
             $cacheLifetime
         );
 
@@ -93,12 +97,13 @@ class Renderer
 
         if ($canRenderCompanion) {
             if (count($this->layout->getAllBlocks()) > 0) {
-                if (!$this->layout->hasElement($scriptCompanionBlock->getNameInLayout())) {
+                if (!array_key_exists($possibleScriptCompanionTemplate, $this->bakedSingletonCompanions)) {
                     $this->layout->addBlock(
                         $scriptCompanionBlock,
                         $scriptCompanionBlock->getNameInLayout(),
-                        'checkout.onepage.api.after'
+                        $scriptLayoutParent
                     );
+                    $this->bakedSingletonCompanions[$possibleScriptCompanionTemplate] = true;
                 }
             } else {
                 $html .= $this->renderRecursive($scriptCompanionBlock, null);

@@ -1,0 +1,68 @@
+<?php
+
+use Magento\Framework\Escaper;
+use PerspectiveTeam\HeadlessComponents\Block\Headless;
+
+/** @var Headless $block */
+/** @var Escaper $escaper */
+
+
+$managedFlags = [
+    'required' => false,
+];
+
+$name = $block->getData('name');
+$key = uniqid("input-text_{$name}_");
+
+$label = $block->getData('label') ?? '';
+
+$wrapperAttributesHtml = $block->attributesHtmlGenerator->generate($block->getData('wrapper'));
+$selectAttributesHtml = $block->attributesHtmlGenerator->generate(
+    $block->getData('select'),
+    function ($key, $value) use (&$managedFlags) {
+        if ($key === 'required') {
+            $managedFlags['required'] = $value !== 'false';
+        }
+    }
+);
+$itemAttributesHtml = $block->attributesHtmlGenerator->generate($block->getData('item'));
+
+$component = <<<JS
+(
+    (props = {
+        loading: false,
+        options: [],
+    }) => {
+        return {
+            loading: props?.loading ?? false,
+            options: props?.options ?? [],
+        };
+    }
+)
+JS;
+$component .= '(' . $block->getData('props') . ')';
+?>
+
+<div x-data="<?= $escaper->escapeHtmlAttr($component) ?>"
+     :class="'field <?= $managedFlags['required'] ? 'required' : '' ?>'"
+    <?= $wrapperAttributesHtml ?>
+>
+    <?php if (strlen($label)): ?>
+        <label class="label" for="<?= $key ?>">
+            <span><?= $label ?></span>
+        </label>
+    <?php endif; ?>
+    <div class="control" style="position: relative">
+        <template x-if="loading">
+            <div style="position: absolute; top: 4px; left: 10px">
+                <?= $block->getRenderer()->render('component/headless/atom/loader') ?>
+            </div>
+        </template>
+        <select id="<?= $key ?>" class="select" <?= $selectAttributesHtml ?>>
+            <option :value="undefined"></option>
+            <template x-for="option in options" :key="option.id">
+                <option x-text="option.label" :value="option.id" <?= $itemAttributesHtml ?>></option>
+            </template>
+        </select>
+    </div>
+</div>

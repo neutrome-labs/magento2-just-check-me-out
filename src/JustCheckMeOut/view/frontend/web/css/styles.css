@@ -1,0 +1,54 @@
+.justcheckmeout__container {
+    display: grid;
+    grid-column-gap: 10px;
+    grid-row-gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+@media screen and (min-width:961px) {
+    .justcheckmeout__container {
+        grid-template-columns: 4fr 3fr;
+    }
+}
+
+.justcheckmeout__unified_address_form__fieldset_row {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.justcheckmeout__unified_address_form__fieldset_row > * {
+    flex: 1;
+}
+
+.field.required label.label:after {
+    content: "*";
+    color: red;
+}
+
+.justcheckmeout__headless_radio_list__item {
+    background: #f7f7f7;
+    padding: 10px;
+    flex: 1;
+    border: 1px #f7f7f7 solid;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.justcheckmeout__headless_radio_list__item input[type="radio"] {
+    display: none;
+}
+
+@keyframes blink {
+    0% {
+        color: rgba(33,33,33,1);
+    }
+    50% {
+        color: rgba(33,33,33,0.5)
+    }
+    100% {
+        color: rgba(33,33,33,1)
+    }
+}

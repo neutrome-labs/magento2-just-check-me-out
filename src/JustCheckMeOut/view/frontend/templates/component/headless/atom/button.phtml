@@ -1,16 +1,21 @@
 <?php
-declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use PerspectiveTeam\HeadlessComponents\Block\Headless;
 
 /** @var Headless $block */
 /** @var Escaper $escaper */
+
+$attributesHtml = $block->attributesHtmlGenerator->generate($block->getData('attributes'));
 ?>
 
-<button
-    style="padding: 10px; background-color: #eee; border: 1px solid #ccc; border-radius: 5px;"
-    <?php foreach ($block->getData('attributes') ?? [] as $k => $v) {
-        echo " $k=\"$v\"";
-    } ?>
-><?= $block->getData('text') ?></button>
+<button class="button action continue primary" <?= $attributesHtml ?> style="display: flex; justify-content: center; align-items: center;gap: 10px;">
+    <?= $block->getRenderer()->render('component/headless/atom/loader', [
+        'attributes' => [
+            ':style' => "loading ? 'margin-left: -24px; opacity: 1' : 'margin-left: -29px; opacity: 0'",
+        ]
+    ]) ?>
+    <span <?php if ($text = $block->getData(':label')) echo "x-text=\"$text\"" ?>>
+        <?= $block->getData('label') ?>
+    </span>
+</button>

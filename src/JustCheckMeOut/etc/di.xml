@@ -2,7 +2,36 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Checkout\Controller\Index\Index">
-        <plugin name="checkout_controller_plugin"
+        <plugin name="PerspectiveTeam_JustCheckMeOut::checkout_controller_plugin"
                 type="PerspectiveTeam\JustCheckMeOut\Plugin\CheckoutControllerPlugin"/>
     </type>
+
+    <virtualType name="flatrateShippingMethodAdditionalView" type="PerspectiveTeam\JustCheckMeOut\Model\AdditionalView">
+        <arguments>
+            <argument name="kind" xsi:type="string">plain_html</argument>
+            <argument name="argument" xsi:type="string">Example shipping method message!</argument>
+        </arguments>
+    </virtualType>
+    <type name="PerspectiveTeam\JustCheckMeOut\Service\ShippingMethodAdditionalViewRegistry">
+        <arguments>
+            <argument name="items" xsi:type="array">
+                <item name="flatrate_flatrate" xsi:type="object">flatrateShippingMethodAdditionalView</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <virtualType name="checkmoPaymentMethodAdditionalView" type="PerspectiveTeam\JustCheckMeOut\Model\AdditionalView">
+        <arguments>
+            <argument name="kind" xsi:type="string">plain_html</argument>
+            <argument name="argument" xsi:type="string">Example payment method message!</argument>
+        </arguments>
+    </virtualType>
+    <type name="PerspectiveTeam\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry">
+        <arguments>
+            <argument name="items" xsi:type="array">
+                <item name="checkmo" xsi:type="object">checkmoPaymentMethodAdditionalView</item>
+            </argument>
+        </arguments>
+    </type>
 </config>
+

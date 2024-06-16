@@ -2,19 +2,10 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-
-// todo: 1 в 1 копипаста с примера из оф модуля
 ?>
 
 <script src="https://js.stripe.com/v3/"></script>
@@ -48,25 +39,32 @@ $components = $block->getData('headlessComponentRenderer');
 
         var options = {
             mode: 'payment',
-            amount: parseInt((parseFloat('<?= $quoteViewModel->getQuote()->getGrandTotal() ?>')*100).toString()),
-            currency: 'gbp',
+            amount: parseInt((parseFloat('<?= $block->quoteViewModel->getQuote()->getGrandTotal() ?>')*100).toString()),
+            currency: '<?= strtolower($block->quoteViewModel->getQuote()->getCurrency()->getQuoteCurrencyCode()) ?>',
             // Fully customizable with appearance API.
             appearance: {/*...*/},
             paymentMethodCreation: "manual"
         };
+        console.log(options);
 
         // Set up Stripe.js and Elements to use in checkout form
         elements = stripe.elements(options);
 
         // Create and mount the Payment Element
         paymentElement = elements.create('payment');
+    };
+
+    var mountPaymentElement = function () {
+        if (!paymentElement) {
+            setTimeout(mountPaymentElement, 1000);
+        }
         paymentElement.mount('#payment-element');
     };
 
-    var getStripeModuleConfiguration = function () {
+    var getStripeModuleConfiguration = function (total) {
         window.fetchMagento2Gql(moduleConfigurationQuery).then(function (response) {
             stripeVariables = response.data.getStripeConfiguration;
-            initPaymentElement();
+            initPaymentElement(total);
         });
     };
 
@@ -76,7 +74,7 @@ $components = $block->getData('headlessComponentRenderer');
             elements: elements,
             params: {
                 billing_details: {
-                    name: '<?= $quoteViewModel->getQuote()->getBillingAddress()->getFirstname() ?>'
+                    name: '<?= $block->quoteViewModel->getQuote()->getBillingAddress()->getFirstname() ?>'
                 }
             }
         });
@@ -110,7 +108,16 @@ $components = $block->getData('headlessComponentRenderer');
     };
 
     document.addEventListener('DOMContentLoaded', function () {
-        window.justCheckMeOutApiV1.globals.registerJsPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
+        getStripeModuleConfiguration();
+        window.justCheckMeOutApiV1.bus.on('totals.grand-total-changed', (total) => {
+            paymentElement.unmount();
+            elements.update({
+                amount: parseInt((parseFloat(total)*100).toString())
+            })
+            mountPaymentElement()
+        })
+
+        window.justCheckMeOutApiV1.globals.registerPlaceOrderHook('stripe_payments', async (placeOrderComponent) => {
             const xresult = {
                 preventDefault: true,
                 orderNumber: undefined,
@@ -124,9 +131,11 @@ $components = $block->getData('headlessComponentRenderer');
                 return xresult;
             }
 
+            await window.justCheckMeOutApiV1.bus.fire('place-order.progress', '<?= __('Placing order...') ?>');
+
             const response = await window.fetchMagento2Gql(`mutation {
     setPaymentMethodOnCart(input: {
-      cart_id: "${window.justCheckMeOutApiV1.globals.getCartId()}"
+      cart_id: "${window.justCheckMeOutApiV1.globals.cartId()}"
       payment_method: {
         code: "stripe_payments"
         stripe_payments: {
@@ -141,7 +150,7 @@ $components = $block->getData('headlessComponentRenderer');
       }
     }
   }
-  placeOrder(input: {cart_id: "${window.justCheckMeOutApiV1.globals.getCartId()}"}) {
+  placeOrder(input: {cart_id: "${window.justCheckMeOutApiV1.globals.cartId()}"}) {
     order {
       order_number
       client_secret
@@ -155,6 +164,7 @@ $components = $block->getData('headlessComponentRenderer');
 
             if (response && response.data && response.data.placeOrder && response.data.placeOrder.order && response.data.placeOrder.order.client_secret) {
                 xresult.orderNumber = response.data.placeOrder.order.order_number;
+                await window.justCheckMeOutApiV1.bus.fire('place-order.progress', '<?= __('Processing payment...') ?>');
 
                 await stripe.retrievePaymentIntent(response.data.placeOrder.order.client_secret).then(function (result) {
                     if (result.error) {

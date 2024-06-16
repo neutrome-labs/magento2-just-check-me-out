@@ -3,85 +3,60 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
 
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-
-$cartId = $quoteViewModel->getMaskedQuoteId();
-$scriptTagId = uniqid('psteam-justcheckmeout-api-script_');
+$cartId = $block->quoteViewModel->getMaskedQuoteId();
+$scriptTagId = uniqid('justcheckmeout-api-script_');
 ?>
 
-<script id="<?= $scriptTagId ?>" x-init="window.justCheckMeOutApiV1.init()">
+<script id="<?= $scriptTagId ?>">
     window.justCheckMeOutApiV1 = {
         globals: {
-            getCartId: function () {
+            cartId: function () {
                 return Alpine.store('justcheckmeout::cartId') ?? <?= "'$cartId'" ?>;
             },
-            registerJsPlaceOrderHook: function (paymentMethodCode, handler) {
+            registerPlaceOrderGuard: function (slug, priority, handler) {
+                const guards = Alpine.store('justcheckmeout::placeOrderGuards') ?? {};
+                guards[slug] = {priority, handler};
+                Alpine.store('justcheckmeout::placeOrderGuards', guards);
+            },
+            getPlaceOrderGuardHandlers: function () {
+                const guards = Alpine.store('justcheckmeout::placeOrderGuards') ?? {};
+                return Object.entries(guards)
+                    .sort((a, b) => a[1].priority - b[1].priority)
+                    .map(([slug, data]) => data.handler);
+            },
+            registerPlaceOrderHook: function (paymentMethodCode, handler) {
                 const hooks = Alpine.store('justcheckmeout::placeOrderHooks') ?? {};
-                hooks[paymentMethodCode] = handler
+                hooks[paymentMethodCode] = handler;
                 Alpine.store('justcheckmeout::placeOrderHooks', hooks);
             },
-            getJsPlaceOrderHook: function (paymentMethodCode) {
+            getPlaceOrderHook: function (paymentMethodCode) {
                 return (Alpine.store('justcheckmeout::placeOrderHooks') ?? {})[paymentMethodCode];
-            }
+            },
         },
         bus: {
-            _el: document.getElementById("<?= $scriptTagId ?>"),
             on: function (event, callback) {
-                window.justCheckMeOutApiV1
-                    .bus
-                    ._el
-                    .addEventListener(`psteam_justcheckmeout::${event}`, e => callback(e.detail.payload));
+                const events = Alpine.store(`justcheckmeout::events::${event}`) ?? [];
+                events.push(callback);
+                Alpine.store(`justcheckmeout::events::${event}`, events);
             },
-            fire: function (event, payload) {
-                window.justCheckMeOutApiV1
-                    .bus
-                    ._el
-                    .dispatchEvent(new CustomEvent(`psteam_justcheckmeout::${event}`, {
-                        detail: {
-                            payload,
-                        }
-                    }));
+            fire: async function (event, payload) {
+                const events = Alpine.store(`justcheckmeout::events::${event}`) ?? [];
+                for (const callback of events) {
+                    await callback(payload);
+                }
             },
-        },
-        init: function () {
-
         },
         fn: {},
         component: {},
     };
 </script>
 
-<?php
-$innerBlockData = [
-    'ssrGqlViewModel' => $gql,
-    'quoteViewModel' => $quoteViewModel,
-];
-
-$innerBlocks = [
-    'component/customer-email-form',
-    'component/shipping-address-form',
-    'component/unified-address-form',
-    'component/shipping-method-list',
-    'component/payment-method-list',
-    'component/totals',
-    'component/place-order-button',
-];
-
-foreach ($innerBlocks as $name) {
-    echo $components->render("PerspectiveTeam_JustCheckMeOut::api/$name.phtml", $innerBlockData);
-}
-?>
-
-<?= $block->getChildHtml('checkout.onepage.api.after') ?>
+<?= $block->getChildHtml('justcheckmeout.api.after') ?>

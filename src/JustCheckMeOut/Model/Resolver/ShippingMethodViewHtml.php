@@ -8,7 +8,7 @@ use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use PerspectiveTeam\JustCheckMeOut\Service\AdditionalViewRenderer;
 use PerspectiveTeam\JustCheckMeOut\Service\ShippingMethodAdditionalViewRegistry;
 
-class ShippingMethodDetailsHtml implements ResolverInterface
+class ShippingMethodViewHtml implements ResolverInterface
 {
 
     public function __construct(

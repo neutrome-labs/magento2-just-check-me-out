@@ -3,16 +3,12 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
@@ -36,20 +32,116 @@ query shippingMethodsAvailable(\$cart_id: String!) {
       selected_shipping_method {
         carrier_code
         method_code
-        details_html
+        justcheckmeout_view_html
       }
     }
   }
 }
-GRAPHQL;
+GRAPHQL; ?>
 
-        const SET_SHIPPING_METHOD_GQL = <<<GRAPHQL
-mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: String!){
+        props = {
+            refreshEvents: ['state.set.customer', 'state.set.shipping-address'],
+            ...props,
+        }
+
+        return {
+            <?php if(!$block->configManager->getComponentConfig('shipping-method-list', 'optimistic')): ?>
+            methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(SHIPPING_METHODS_LIST_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+            <?php endif; ?>
+
+            interactive: true,
+            methodsAvailable: [],
+
+            uiSelectedMethod: undefined,
+            selectedMethod: undefined,
+            selectedMethodViewHtml: undefined,
+
+            addressFromGqlData(data) {
+                const addresses = data?.cart?.shipping_addresses;
+                return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
+            },
+            tryExtractGqlData(data, skipSelected = false) {
+                const address = this.addressFromGqlData(data);
+                if (!address) {
+                    return;
+                }
+
+                this.methodsAvailable = address.available_shipping_methods ?? [];
+                if (!skipSelected) {
+                    if (
+                        address.selected_shipping_method
+                        && address.selected_shipping_method.carrier_code
+                        && address.selected_shipping_method.method_code
+                    ) {
+                        const newMethodCode = `${address.selected_shipping_method.carrier_code}_${address.selected_shipping_method.method_code}`;
+                        if (this.selectedMethod !== newMethodCode) {
+                            this.selectedMethod = newMethodCode;
+                            this.selectedMethodViewHtml = address.selected_shipping_method.justcheckmeout_view_html;
+                        }
+                    } else {
+                        this.selectedMethod = undefined;
+                        this.selectedMethodViewHtml = undefined;
+                    }
+                    this.uiSelectedMethod = this.selectedMethod;
+                }
+            },
+            tryExtractGqlErrors(errors) {
+                if (errors?.length > 0) {
+                    for (const e of errors) {
+                        this.$dispatch('justcheckmeout-message-shipping-method-list', {
+                            type: 'error',
+                            text: e.message,
+                        });
+                    }
+                }
+            },
+
+            canPlaceOrder() {
+                return this.selectedMethod?.length > 0;
+            },
+
+            init() {
+                window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('shipping-method', 200, () => {
+                    const ok = this.canPlaceOrder();
+                    return {
+                        state: !this.interactive ? 'pending' : (ok ? 'ok' : 'error'),
+                        message: ok ? 'Shipping method selected!' : 'Please select shipping method',
+                    };
+                });
+
+                this.tryExtractGqlData(this.methodsGql?.data);
+                this.tryExtractGqlErrors(this.methodsGql?.errors);
+
+                this.$watch('uiSelectedMethod', async () => {
+                    if (this.uiSelectedMethod !== this.selectedMethod) {
+                        await this.selectMethod(this.uiSelectedMethod);
+                    }
+                });
+
+                for (const e of props.refreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                        try {
+                            this.interactive = false;
+
+                            await this.methodsGql.refresh();
+                            this.tryExtractGqlData(this.methodsGql?.data);
+                            this.tryExtractGqlErrors(this.methodsGql?.errors);
+                        } finally {
+                            this.interactive = true;
+                        }
+                    });
+                }
+            },
+
+            async setShippingMethodOnCart(variables) {
+                return await window.fetchMagento2Gql(`mutation setShippingMethod($card_id: String!, $carrier: String!, $method: String!){
   setShippingMethodsOnCart(input: {
-    cart_id: \$card_id,
+    cart_id: $card_id,
     shipping_methods: [{
-      carrier_code: \$carrier,
-      method_code: \$method
+      carrier_code: $carrier,
+      method_code: $method
     }]
   }){
     cart {
@@ -67,91 +159,134 @@ mutation setShippingMethod(\$card_id: String!, \$carrier: String!, \$method: Str
         selected_shipping_method {
           carrier_code
           method_code
-            details_html
-          }
+          justcheckmeout_view_html
         }
       }
     }
-}
-GRAPHQL;
-        ?>
-
-        return {
-            methodsGql: <?= $gql->makeSsrGqlCall(SHIPPING_METHODS_LIST_GQL, [
-                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
-
-            interactive: true,
-            methodsAvailable: [],
-            selectedMethod: undefined,
-            selectedMethodDetailsHtml: undefined,
-
-            addressFromGqlData: function (data) {
-                const addresses = data?.cart?.shipping_addresses;
-                return !Array.isArray(addresses) || addresses.length === 0 ? null : addresses[0];
+  }
+}`, variables);
             },
-            tryExtractGqlData: function (data) {
-                const address = this.addressFromGqlData(data);
-                if (!address) {
+            async selectMethod(code) {
+                if (!this.interactive) {
                     return;
                 }
 
-                this.methodsAvailable = address.available_shipping_methods ?? [];
-                if (address.selected_shipping_method) {
-                    const newMethodCode = `${address.selected_shipping_method.carrier_code}_${address.selected_shipping_method.method_code}`;
-                    if (this.selectedMethod !== newMethodCode) {
-                        this.selectedMethod = newMethodCode;
-                        this.selectedMethodDetailsHtml = address.selected_shipping_method.details_html;
-                    }
-                }
-            },
-            tryExtractGqlErrors: function (errors) {
-                if (errors?.length > 0) {
-                    for (const e of errors) {
-                        this.$dispatch('justcheckmeout-message-shipping-method-list', {
-                            type: 'error',
-                            text: e.message,
-                        });
-                    }
-                }
-            },
-
-            init: function () {
-                this.tryExtractGqlData(this.methodsGql?.data);
-                this.tryExtractGqlErrors(this.methodsGql?.errors);
-
-                for (const e of props.refreshEvents) {
-                    window.justCheckMeOutApiV1.bus.on(e, async () => {
-                        try {
-                            this.interactive = false;
-
-                            await this.methodsGql.refresh();
-                            this.tryExtractGqlData(this.methodsGql?.data);
-                            this.tryExtractGqlErrors(this.methodsGql?.errors);
-                        } finally {
-                            this.interactive = true;
-                        }
-                    });
-                }
-            },
-
-            selectMethod: async function (method) {
                 try {
                     this.interactive = false;
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
 
-                    const r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_METHOD_GQL ?>`, {
-                        card_id: window.justCheckMeOutApiV1.globals.getCartId(),
-                        carrier: method.carrier_code,
-                        method: method.method_code,
+                    const [carrier, method] = code.split('_');
+                    const r = await this.setShippingMethodOnCart({
+                        card_id: window.justCheckMeOutApiV1.globals.cartId(),
+                        carrier,
+                        method,
                     });
-                    this.tryExtractGqlData(r.data?.setShippingMethodsOnCart);
-                    this.tryExtractGqlErrors(r.errors);
+
+                    if (r?.errors?.length > 0) {
+                        this.tryExtractGqlErrors(r.errors);
+                        await this.methodsGql.refresh();
+                    } else {
+                        this.tryExtractGqlData(r?.data?.setShippingMethodsOnCart);
+                    }
                 } finally {
                     this.interactive = true;
                 }
 
-                window.justCheckMeOutApiV1.bus.fire('state.set.shipping-method', this.selectedMethod);
+                await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-method', this.selectedMethod);
+                await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
             }
         };
     }
+
+    <?php if($block->configManager->getComponentConfig('shipping-method-list', 'optimistic')): ?>
+    window.justCheckMeOutApiV1.component.createOptimisticShippingMethodList = function (props = {
+        refreshEvents: ['state.set.customer', 'state.set.shipping-address'],
+        deferred: <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>,
+    }) {
+         <?php $OPTIMISTIC_SHIPPING_METHODS_LIST_GQL = <<<GRAPHQL
+query shippingMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    shipping_addresses {
+      available_shipping_methods {
+        carrier_code
+        carrier_title
+        method_code
+        method_title
+        price_incl_tax {
+          currency
+          value
+        }
+        justcheckmeout_view_html
+      }
+      selected_shipping_method {
+        carrier_code
+        method_code
+      }
+    }
+  }
+}
+GRAPHQL; ?>
+        const realistic = window.justCheckMeOutApiV1.component.createShippingMethodList(props);
+        return {
+            ...realistic,
+
+            methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall($OPTIMISTIC_SHIPPING_METHODS_LIST_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+
+            updateViewHtml: function() {
+                this.selectedMethodViewHtml = this.methodsAvailable
+                    ?.find(m => m.carrier_code + '_' + m.method_code === this.selectedMethod)
+                    ?.justcheckmeout_view_html;
+            },
+            tryExtractGqlData(data) {
+                const currentViews = {};
+                for (const v of this.methodsAvailable) {
+                    currentViews[v.carrier_code + '_' + v.method_code] = v.justcheckmeout_view_html;
+                }
+
+                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>);
+
+                for (const v of this.methodsAvailable) {
+                    if (
+                        data?.setShippingMethodsOnCart?.cart?.shipping_addresses[0]?.selected_shipping_method?.carrier_code === v.carrier_code
+                        && data?.setShippingMethodsOnCart?.cart?.shipping_addresses[0]?.selected_shipping_method?.method_code === v.method_code
+                    ) {
+                        this.selectedMethodViewHtml = v.justcheckmeout_view_html;
+                    } else if (!v.justcheckmeout_view_html) {
+                        v.justcheckmeout_view_html = currentViews[v.carrier_code + '_' + v.method_code];
+                    }
+                }
+
+                this.updateViewHtml();
+            },
+
+            init() {
+                realistic.init.bind(this)();
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                    window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('deferred-shipping-method', 210, async (_, final) => {
+                        if (final) {
+                            await realistic.selectMethod.bind(this)(this.selectedMethod);
+                        }
+                        return {
+                            state: !this.interactive ? 'pending' : (this.canPlaceOrder() ? 'ok' : 'error')
+                        };
+                    });
+                }
+            },
+
+            async selectMethod(code) {
+                this.selectedMethod = code;
+                this.updateViewHtml();
+
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                    await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-method', this.selectedMethod);
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
+                } else {
+                    await realistic.selectMethod.bind(this)(code);
+                }
+            }
+        }
+    }
+    <?php endif; ?>
 </script>

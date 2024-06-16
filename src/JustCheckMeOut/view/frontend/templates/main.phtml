@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
+
+/** @var Stateful $block */
+/** @var Escaper $escaper */
+?>
+
+<div class="justcheckmeout__container">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <?= $block->getChildHtml('unified-address-form') ?>
+        <?= $block->getChildHtml('shipping-method-list') ?>
+    </div>
+    <div style="background: #eee; padding: 10px 15px; display: flex; flex-direction: column; gap: 20px;">
+        <?= $block->getChildHtml('items') ?>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <?= $block->getChildHtml('totals') ?>
+            <?= $block->getChildHtml('payment-method-list') ?>
+        </div>
+        <?= $block->getChildHtml('place-order-button') ?>
+    </div>
+</div>

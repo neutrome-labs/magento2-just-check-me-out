@@ -3,22 +3,25 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
     window.justCheckMeOutApiV1.component.createPaymentMethodList = function (props = {
         refreshEvents: ['state.set.customer', 'state.set.shipping-address', 'state.set.shipping-method'],
     }) {
+        props = {
+            ...{
+                refreshEvents: ['state.set.customer', 'state.set.shipping-address', 'state.set.shipping-method'],
+            },
+            ...props
+        }
+
         <?php const PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
 query paymentMethodsAvailable(\$cart_id: String!) {
   cart(cart_id: \$cart_id) {
@@ -28,7 +31,7 @@ query paymentMethodsAvailable(\$cart_id: String!) {
     }
     selected_payment_method {
       code
-      details_html
+      justcheckmeout_view_html
     }
   }
 }
@@ -49,7 +52,7 @@ mutation setPaymentMethod(\$card_id: String!, \$code: String!){
       }
       selected_payment_method {
         code
-        details_html
+        justcheckmeout_view_html
       }
     }
   }
@@ -58,26 +61,31 @@ GRAPHQL;
         ?>
 
         return {
-            methodsGql: <?= $gql->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
-                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            <?php if (!$block->configManager->getComponentConfig('payment-method-list', 'optimistic')): ?>
+            methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
+            <?php endif; ?>
 
             interactive: true,
             methodsAvailable: [],
-            selectedMethod: undefined,
-            selectedMethodDetailsHtml: undefined,
 
-            tryExtractGqlData: function (data) {
+            uiSelectedMethod: undefined,
+            selectedMethod: undefined,
+            selectedMethodViewHtml: undefined,
+
+            tryExtractGqlData(data, skipSelected = false) {
                 this.methodsAvailable = data?.cart?.available_payment_methods;
-                if (data?.cart?.selected_payment_method) {
-                    const newMethodCode = data?.cart?.selected_payment_method?.code;
+                const newMethodCode = data?.cart?.selected_payment_method?.code;
+                if (!skipSelected) {
                     if (this.selectedMethod !== newMethodCode) {
                         this.selectedMethod = newMethodCode;
-                        this.selectedMethodDetailsHtml = data?.cart?.selected_payment_method?.details_html;
+                        this.selectedMethodViewHtml = data?.cart?.selected_payment_method?.justcheckmeout_view_html;
                     }
+                    this.uiSelectedMethod = this.selectedMethod;
                 }
             },
-            tryExtractGqlErrors: function (errors) {
+            tryExtractGqlErrors(errors) {
                 if (errors?.length > 0) {
                     for (const e of errors) {
                         this.$dispatch('justcheckmeout-message-payment-method-list', {
@@ -88,9 +96,27 @@ GRAPHQL;
                 }
             },
 
-            init: function () {
+            canPlaceOrder() {
+                return this.selectedMethod?.length > 0;
+            },
+
+            init() {
+                window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('payment-method', 300, () => {
+                    const ok = this.canPlaceOrder();
+                    return {
+                        state: !this.interactive ? 'pending' : (ok ? 'ok' : 'error'),
+                        message: ok ? 'Payment method selected!' : 'Please select payment method',
+                    };
+                });
+
                 this.tryExtractGqlData(this.methodsGql?.data);
                 this.tryExtractGqlErrors(this.methodsGql?.errors);
+
+                this.$watch('uiSelectedMethod', async () => {
+                    if (this.uiSelectedMethod !== this.selectedMethod) {
+                        await this.selectMethod(this.uiSelectedMethod);
+                    }
+                })
 
                 for (const e of props.refreshEvents) {
                     window.justCheckMeOutApiV1.bus.on(e, async () => {
@@ -107,22 +133,116 @@ GRAPHQL;
                 }
             },
 
-            selectMethod: async function (method) {
+            async selectMethod(code) {
+                if (!this.interactive) {
+                    return;
+                }
+
                 try {
                     this.interactive = false;
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
 
                     const r = await window.fetchMagento2Gql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
-                        card_id: window.justCheckMeOutApiV1.globals.getCartId(),
-                        code: method.code,
+                        card_id: window.justCheckMeOutApiV1.globals.cartId(),
+                        code,
                     });
-                    this.tryExtractGqlData(r.data?.setPaymentMethodOnCart);
-                    this.tryExtractGqlErrors(r.errors);
+
+                    if (r?.errors?.length > 0) {
+                        this.tryExtractGqlErrors(r.errors);
+                        await this.methodsGql.refresh();
+                        this.tryExtractGqlData(this.methodsGql?.data);
+                        this.tryExtractGqlErrors(this.methodsGql?.errors);
+                    } else {
+                        this.tryExtractGqlData(r?.data?.setPaymentMethodOnCart);
+                    }
                 } finally {
                     this.interactive = true;
                 }
 
-                window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
+                await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
+                await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
             }
         };
     }
+
+    <?php if ($block->configManager->getComponentConfig('payment-method-list', 'optimistic')): ?>
+    window.justCheckMeOutApiV1.component.createOptimisticPaymentMethodList = function (props = {
+        refreshEvents: ['state.set.customer', 'state.set.shipping-address', 'state.set.shipping-method'],
+        deferred: <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>,
+    }) {
+        <?php $OPTIMISTIC_PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
+query paymentMethodsAvailable(\$cart_id: String!) {
+  cart(cart_id: \$cart_id) {
+    available_payment_methods {
+      code
+      title
+      justcheckmeout_view_html
+    }
+    selected_payment_method {
+      code
+    }
+  }
+}
+GRAPHQL; ?>
+
+        const realistic = window.justCheckMeOutApiV1.component.createPaymentMethodList(props);
+        return {
+            ...realistic,
+
+            methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall($OPTIMISTIC_PAYMENT_METHODS_LIST_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
+            ]) ?>,
+
+            updateViewHtml: function (code) {
+                this.selectedMethodViewHtml = this.methodsAvailable
+                    ?.find(m => m.code === code)
+                    ?.justcheckmeout_view_html;
+            },
+            tryExtractGqlData(data) {
+                const currentViews = {};
+                for (const v of this.methodsAvailable) {
+                    currentViews[v.code] = v.justcheckmeout_view_html;
+                }
+
+                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>);
+
+                for (const v of this.methodsAvailable) {
+                    if (data?.setPaymentMethodOnCart?.cart?.selected_payment_method?.code === v.code) {
+                        this.selectedMethodViewHtml = v.justcheckmeout_view_html;
+                    } else if (!v.justcheckmeout_view_html) {
+                        v.justcheckmeout_view_html = currentViews[v.code];
+                    }
+                }
+
+                this.updateViewHtml(this.selectedMethod);
+            },
+
+            init() {
+                realistic.init.bind(this)();
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                    window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('deferred-payment-method', 310, async (_, final) => {
+                        if (final) {
+                            await realistic.selectMethod.bind(this)(this.selectedMethod);
+                        }
+                        return {
+                            state: !this.interactive ? 'pending' : (this.canPlaceOrder() ? 'ok' : 'error')
+                        };
+                    });
+                }
+            },
+
+            async selectMethod(code) {
+                this.updateViewHtml(code);
+                this.selectedMethod = code;
+
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                    await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
+                } else {
+                    await realistic.selectMethod.bind(this)(code);
+                }
+            }
+        }
+    }
+    <?php endif; ?>
 </script>

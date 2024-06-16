@@ -1,15 +1,15 @@
 type AvailableShippingMethod {
-    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodDetailsHtml")
+    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
 }
 
 type SelectedShippingMethod {
-    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodDetailsHtml")
+    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
 }
 
 type AvailablePaymentMethod {
-    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodDetailsHtml")
+    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
 }
 
 type SelectedPaymentMethod {
-    details_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodDetailsHtml")
+    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
 }

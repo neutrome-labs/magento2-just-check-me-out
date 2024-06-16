@@ -5,13 +5,15 @@ namespace PerspectiveTeam\JustCheckMeOut\Plugin;
 use Magento\Checkout\Controller\Index\Index;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
+use PerspectiveTeam\JustCheckMeOut\Service\ConfigManager;
 
 class CheckoutControllerPlugin
 {
 
-    public const FORWARD_URL_PATH = 'psteamjustcheckmeout/onepage/index';
+    public const FORWARD = 'justcheckmeout/index/index';
 
     public function __construct(
+        private readonly ConfigManager $configManager,
         private readonly ResultFactory $resultFactory
     )
     {
@@ -24,7 +26,11 @@ class CheckoutControllerPlugin
      */
     public function aroundExecute(Index $subject, callable $proceed): ResultInterface
     {
-        [$module, $controller, $action] = explode('/', self::FORWARD_URL_PATH);
+        if (!$this->configManager->replaceDefault()) {
+            return $proceed();
+        }
+
+        [$module, $controller, $action] = explode('/', self::FORWARD);
         $resultForward = $this->resultFactory->create(ResultFactory::TYPE_FORWARD);
 
         return $resultForward->setModule($module)->setController($controller)->forward($action);

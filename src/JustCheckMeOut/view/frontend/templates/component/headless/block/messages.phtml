@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use PerspectiveTeam\HeadlessComponents\Block\Headless;
@@ -10,7 +9,7 @@ use PerspectiveTeam\HeadlessComponents\Block\Headless;
 $scope = $block->getData('scope');
 ?>
 
-<div x-data="window.justCheckMeOutApiV1.component.createMessages()"
+<div x-data="justcheckmeoutHeadlessCreateMessages()"
      @justcheckmeout-message-<?= $scope ?>.window="add($event.detail)">
     <template x-if="messages.length > 0">
         <ul>

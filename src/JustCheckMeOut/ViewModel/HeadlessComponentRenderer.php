@@ -3,6 +3,7 @@
 namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
+use PerspectiveTeam\HeadlessComponents\Service\AttributesHtmlGenerator;
 use PerspectiveTeam\HeadlessComponents\Service\Renderer;
 use PerspectiveTeam\HeadlessComponents\Service\RendererFactory;
 use PerspectiveTeam\JustCheckMeOut\Service\HeadlessThemeManager;
@@ -14,7 +15,8 @@ class HeadlessComponentRenderer implements ArgumentInterface
 
     public function __construct(
         private readonly HeadlessThemeManager $themeManager,
-        private readonly RendererFactory      $rendererFactory
+        private readonly RendererFactory      $rendererFactory,
+        private readonly AttributesHtmlGenerator $attributesHtmlGenerator
     )
     {
     }
@@ -45,6 +47,11 @@ class HeadlessComponentRenderer implements ArgumentInterface
             $slug = 'justcheckmeout.' . $slug;
         }
 
-        return $this->getRenderer()->render($template, $data, $slug, $cacheLifetime);
+        return $this->getRenderer()->render($template, $data, $slug, $cacheLifetime, 'justcheckmeout.api.after');
+    }
+
+    public function renderAttributes(?array $attributes, ?callable $callback = null): string
+    {
+        return $this->attributesHtmlGenerator->generate($attributes, $callback);
     }
 }

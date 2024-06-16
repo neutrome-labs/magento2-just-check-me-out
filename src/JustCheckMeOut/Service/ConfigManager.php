@@ -2,13 +2,46 @@
 
 namespace PerspectiveTeam\JustCheckMeOut\Service;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Serialize\SerializerInterface;
+
 class ConfigManager
 {
 
-    public const CONFIG_KEY_THEME = 'justcheckmeout/theme/current';
+    public function __construct(
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly SerializerInterface $serializer
+    )
+    {
+    }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
+
+    public function replaceDefault(): bool
+    {
+        return true;
+    }
 
     public function getTheme(): string
     {
-        return 'minimal';
+        return 'default';
+    }
+
+    public function getComponentConfig(string $name, string $key): mixed
+    {
+        $config = [
+            'shipping-method-list' => [
+                'optimistic' => true,
+            ],
+            'payment-method-list' => [
+                'optimistic' => true,
+                'deferred' => true,
+            ],
+        ];
+        return $config[$name][$key] ?? null;
+        return $this->scopeConfig->getValue("justcheckmeout/component_$name/$key");
     }
 }

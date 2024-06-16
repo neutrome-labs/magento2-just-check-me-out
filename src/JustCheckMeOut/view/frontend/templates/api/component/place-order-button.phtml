@@ -3,16 +3,12 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
@@ -29,50 +25,109 @@ GRAPHQL;
         ?>
 
         return {
-            interactive: true,
-            currentPaymentMethodCode: '<?= $quoteViewModel->getQuote()->getPayment()->getMethod() ?>',
-            init: function () {
+            interactive: false,
+            loading: false,
+            buttonLabel: '<?= __('Place Order') ?>',
+
+            guardsState: [],
+            currentPaymentMethodCode: '<?= $block->quoteViewModel->getQuote()->getPayment()->getMethod() ?>',
+
+            async loopGuards(final = false) {
+                const state = [];
+                for (const guard of window.justCheckMeOutApiV1.globals.getPlaceOrderGuardHandlers()) {
+                    const r = await guard(this, final);
+                    if (r && r.state) {
+                        state.push(r);
+                    }
+                }
+                this.guardsState = state;
+                this.interactive = !final && state.filter(x => x.state !== 'ok').length === 0;
+            },
+            guardsHintHtml() {
+                const visibleErrors = this.guardsState.filter(x => x.state !== 'ok' && !!x.message);
+                if (visibleErrors.length === 0) {
+                    return '';
+                }
+
+                return '<div style="display: flex; flex-direction: column; gap: 2px">'
+                    + visibleErrors.map(x => `<span class="small">${x.message}</span>`).join('')
+                    + '</div>';
+            },
+
+            async init() {
+                await this.loopGuards();
+                window.justCheckMeOutApiV1.bus.on('place-order.call-the-guards', async () => {
+                    await this.loopGuards();
+                })
+
                 window.justCheckMeOutApiV1.bus.on('state.set.payment-method', payload => {
                     this.currentPaymentMethodCode = payload;
                 })
+
+                window.justCheckMeOutApiV1.bus.on('place-order.progress', payload => {
+                    this.buttonLabel = payload;
+                })
             },
-            place: async function () {
+
+            async place() {
+                if (!this.interactive) {
+                    return {
+                        preventDefault: false,
+                        orderNumber: undefined,
+                        errorMessages: ['Cannot place order while not interactive.'],
+                    }
+                }
+
+                let result = {
+                    preventDefault: false,
+                    orderNumber: undefined,
+                    errorMessages: [],
+                };
+
                 try {
                     this.interactive = false;
+                    this.loading = true;
 
-                    const hook = window.justCheckMeOutApiV1.globals.getJsPlaceOrderHook(this.currentPaymentMethodCode);
-                    const result = hook !== undefined
-                        ? await hook(this)
-                        : {
-                            preventDefault: false,
-                            orderNumber: undefined,
-                            errorMessages: [],
-                        };
+                    this.buttonLabel = '<?= __('Preparing order...') ?>';
+                    await this.loopGuards(true);
+
+                    this.buttonLabel = '<?= __('Preparing payment...') ?>';
+                    const hook = window.justCheckMeOutApiV1.globals.getPlaceOrderHook(this.currentPaymentMethodCode);
+                    if (hook) {
+                        result = await hook(this);
+                    }
 
                     if (!result.preventDefault) {
+                        this.buttonLabel = '<?= __('Placing order...') ?>';
                         const r = await window.fetchMagento2Gql(`<?= PLACE_ORDER_GQL ?>`, {
-                            card_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                            card_id: window.justCheckMeOutApiV1.globals.cartId(),
                         });
                         result.orderNumber = r?.data?.placeOrder?.order?.order_number;
                         result.errorMessages = r?.errors?.map(e => e.message).filter(e => e?.length > 0);
                     }
 
-                    return result;
+                    if (!result.orderNumber) {
+                        throw new Error('No order number assigned');
+                    }
+
+                    this.buttonLabel = '<?= __('Success!') ?>';
                 } catch (e) {
                     this.interactive = true;
+                    this.buttonLabel = '<?= __('Place Order') ?>';
+                } finally {
+                    this.loading = false;
                 }
+
+                return result;
             },
-            getNextUrl: async function () {
+            async getNextUrl() {
                 return `/checkout/onepage/success`;
             },
-            placeAndGoNext: async function () {
-                window.justCheckMeOutApiV1.bus.fire('place-order.before', this);
+            async placeAndGoNext() {
                 const order = await this.place();
                 if (order.orderNumber) {
-                    window.justCheckMeOutApiV1.bus.fire('place-order.after', this);
                     window.location.href = await this.getNextUrl();
-                } else {
-                    this.interactive = true;
+                    return
                 }
 
                 if (order.errorMessages?.length > 0) {
@@ -83,6 +138,7 @@ GRAPHQL;
                         });
                     }
                 }
+                this.interactive = true;
             }
         };
     }

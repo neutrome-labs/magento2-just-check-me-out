@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd"
+      layout="1column">
+    <body>
+        <referenceContainer name="before.body.end">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="justcheckmeout.script-alpine"
+                   template="PerspectiveTeam_JustCheckMeOut::script-alpine.phtml">
+            </block>
+            <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                   name="justcheckmeout.api"
+                   template="PerspectiveTeam_JustCheckMeOut::api.phtml">
+                <container name="justcheckmeout.api.after">
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/customer-email-form.phtml"/>
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/shipping-address-form.phtml"/>
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/shipping-method-list.phtml"/>
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/totals.phtml"/>
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/payment-method-list.phtml"/>
+                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                           template="PerspectiveTeam_JustCheckMeOut::api/component/place-order-button.phtml"/>
+                </container>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

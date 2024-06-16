@@ -3,37 +3,32 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-
-$quote = $quoteViewModel->getQuote();
 ?>
 
-<div x-data="window.justCheckMeOutApiV1.component.createTotals()">
-    <template x-if="subtotal()">
-        <p>
+<div x-data="window.justCheckMeOutApiV1.component.createTotals()"
+     :style="loading ? 'animation: blink 1s linear infinite' : ''">
+    <template x-if="subtotal">
+        <div style="display: flex; justify-content: space-between">
             <span>Subtotal</span>
-            <span x-text="subtotal().value + ' ' + subtotal().currency"></span>
-        </p>
+            <strong x-text="subtotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + subtotal.currency"></strong>
+        </div>
     </template>
-    <template x-for="tax in taxes()">
-        <p>
+    <template x-for="tax in taxes">
+        <div style="display: flex; justify-content: space-between">
             <span x-text="tax.label"></span>
-            <span x-text="tax.amount.value + ' ' + tax.amount.currency"></span>
-        </p>
+            <strong x-text="tax.amount.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + tax.amount.currency"></strong>
+        </div>
     </template>
-    <template x-if="grandTotal()">
-        <p>
+    <template x-if="grandTotal">
+        <div style="display: flex; justify-content: space-between">
             <span>Grand Total</span>
-            <span x-text="grandTotal().value + ' ' + grandTotal().currency"></span>
-        </p>
+            <strong x-text="grandTotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + grandTotal.currency"></strong>
+        </div>
     </template>
 </div>

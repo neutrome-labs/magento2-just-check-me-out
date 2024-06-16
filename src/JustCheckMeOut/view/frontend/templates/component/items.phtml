@@ -2,21 +2,26 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
 
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-
-$quote = $quoteViewModel->getQuote();
 ?>
 
-<?php foreach ($quote->getAllVisibleItems() as $item) {
-    echo $item->getName();
-} ?>
+<?php foreach ($block->quoteViewModel->getQuote()->getAllVisibleItems() as $item): ?>
+<div style="display: flex; gap: 10px;">
+    <img src="https://app.demo-just-check-me-out.test/media/catalog/product/<?= $item->getProduct()->getImage() ?>"
+         style="width: 64px;"
+         alt="<?= $item->getName() ?>"
+         loading="lazy">
+    <div style="display: flex; flex-direction: column; justify-content: space-between">
+        <div style="display: flex; flex-direction: column;">
+            <strong><?=  $item->getName() ?></strong>
+            <span class="small"><?= $item->getSku() ?></span>
+        </div>
+        <span><?= number_format(floatval($item->getPrice()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
+    </div>
+
+</div>
+<?php endforeach; ?>

@@ -3,16 +3,12 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
@@ -109,18 +105,51 @@ mutation setShippingAddress(\$cart_id: String!, \$customer_address_id: Int, \$ad
 }
 GRAPHQL; ?>
 
+        props = {
+            bookRefreshEvents: ['state.set.customer'],
+            formRefreshEvents: [],
+            ...props,
+        }
+
         return {
-            addressBookGql: <?= $gql->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
-            addressGql: <?= $gql->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
-                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            addressBookGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
+            addressGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
 
             interactive: true,
             selectedAddressId: undefined,
-            formData: {},
-            formErrors: {},
+            formData: {
+                street: [],
+            },
+            formMetaData: {},
 
-            extractFormDataFromAddressModel: function (address) {
+            persistFormData() {
+                localStorage.setItem('justcheckmeout::shippingAddressFormData', JSON.stringify({
+                    cartId: window.justCheckMeOutApiV1.globals.cartId(),
+                    formData: this.formData,
+                    formMetaData: this.formMetaData,
+                }))
+            },
+            resetPersistedFormData() {
+                localStorage.removeItem('justcheckmeout::shippingAddressFormData');
+            },
+            tryLoadPersistedFormData() {
+                const dataJson = localStorage.getItem('justcheckmeout::shippingAddressFormData');
+                if (!dataJson || dataJson.length < 1) {
+                    return undefined;
+                }
+
+                const data = JSON.parse(dataJson);
+                if (data.cartId !== window.justCheckMeOutApiV1.globals.cartId()) {
+                    this.resetPersistedFormData();
+                    return undefined;
+                }
+
+                return data;
+            },
+
+            extractFormDataFromAddressModel(address) {
                 return {
                     firstname: address?.firstname ?? '',
                     lastname: address?.lastname ?? '',
@@ -133,56 +162,80 @@ GRAPHQL; ?>
                     street: address?.street ?? [],
                 };
             },
-            addressesFromAddressBook: function () {
-                return this.addressBookGqlWrapper?.data?.customer?.addresses ?? [];
-            },
-            selectAddressFromBook: async function (address) {
-                if (address === undefined) {
-                    return;
-                }
-
-                if (address?.id === this.selectedAddressId) {
-                    return;
-                }
-
-                this.selectedAddressId = address?.id;
-                this.formData = this.extractFormDataFromAddressModel(address);
+            addressesFromAddressBook() {
+                return this.addressBookGql?.data?.customer?.addresses ?? [];
             },
 
-            tryExtractFormDataFromGqlData: function (data) {
+            tryExtractFormDataFromGqlData(data) {
                 const addresses = data?.cart?.shipping_addresses;
                 const address = data?.cart?.shipping_addresses?.length > 0
                     ? addresses[0]
                     : null;
-                return this.extractFormDataFromAddressModel(address);
+                this.formData = this.extractFormDataFromAddressModel(address);
             },
-            tryExtractFormErrorsFromGqlData: function (errors) {
+            tryExtractFormMetaDataFromGqlData(errors) {
+                const newFormMetaData = {};
+                for (const k of Object.keys(this.formData)) {
+                    newFormMetaData[k] = {
+                        ...this.formMetaData[k] ?? {},
+                        valid: true,
+                        subtitle: '',
+                    };
+                }
+
                 if (errors?.length > 0) {
                     for (const e of errors) {
-                        this.$dispatch('justcheckmeout-message-shipping-address', {
-                            type: 'error',
-                            text: e.message,
-                        });
+                        for (const f of Object.keys(this.formMetaData)) {
+                            if ((e.message ?? '').startsWith(`\"${f}\"`)) {
+                                newFormMetaData[f].valid = false;
+                                newFormMetaData[f].subtitle = e.message;
+                            }
+                        }
                     }
                 }
-                return {};
+
+                this.formMetaData = newFormMetaData;
+            },
+            setFieldMetaData(field, key, value) {
+                this.formMetaData[field] = this.formMetaData[field] ?? {};
+                this.formMetaData[field][key] = value;
             },
 
-            init: function () {
+            canPlaceOrder() {
+                return Object.keys(this.formData).length > 0 && Object.values(this.formMetaData).every(v => v.valid !== false);
+            },
+
+            init() {
+                window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('unified-address', 100, () => {
+                    const ok = this.canPlaceOrder();
+                    return {
+                        state: !this.interactive ? 'pending' : (ok ? 'ok' : 'error'),
+                        message: ok ? 'Shipping address looks ok!' : 'Please complete the shipping address form',
+                    };
+                })
+
                 const defaultSelectedAddressId = parseInt(this.addressBookGql?.data?.customer?.default_shipping);
-                if (defaultSelectedAddressId > 0 && Object.entries(this.formData).length === 0) {
+                if (defaultSelectedAddressId > 0 && !this.tryLoadPersistedFormData()) { // first load with default address available
                     const address = this.addressesFromAddressBook().find(a => a.id === defaultSelectedAddressId);
                     this.selectAddressFromBook(address);
+                    this.save();
                 } else {
-                    this.formData = this.tryExtractFormDataFromGqlData(this.addressGql?.data);
-                    this.formErrors = this.tryExtractFormErrorsFromGqlData(this.addressGql?.errors);
+                    this.tryExtractFormDataFromGqlData(this.addressGql?.data);
+                    this.tryExtractFormMetaDataFromGqlData(this.addressGql?.errors);
+                }
+
+                // todo: merge with ssr data
+                const persistedFormData = this.tryLoadPersistedFormData();
+                if (persistedFormData) {
+                    this.formData = persistedFormData.formData;
+                    this.formMetaData = persistedFormData.formMetaData;
                 }
 
                 for (const e of props.bookRefreshEvents) {
                     window.justCheckMeOutApiV1.bus.on(e, async () => {
                         try {
                             this.interactive = false;
-                            await this.addressBookGql.refresh();
+                            await this.addressBookGql.refresh({'cart_id': window.justCheckMeOutApiV1.globals.cartId()});
                         } finally {
                             this.interactive = true;
                         }
@@ -194,41 +247,61 @@ GRAPHQL; ?>
                         try {
                             this.interactive = false;
 
-                            await this.addressGql.refresh();
-                            this.formData = this.tryExtractFormDataFromGqlData(this.addressGql?.data);
-                            this.formErrors = this.tryExtractFormErrorsFromGqlData(this.addressGql?.errors);
+                            await this.addressGql.refresh({'cart_id': window.justCheckMeOutApiV1.globals.cartId()});
+                            this.tryExtractFormDataFromGqlData(this.addressGql?.data);
+                            this.tryExtractFormMetaDataFromGqlData(this.addressGql?.errors);
                         } finally {
                             this.interactive = true;
                         }
                     });
                 }
+
+                this.$watch('formData', () => this.persistFormData());
             },
 
-            save: async function () {
+
+            selectAddressFromBook(address) {
+                if (address === undefined) {
+                    return;
+                }
+
+                if (address?.id === this.selectedAddressId) {
+                    return;
+                }
+
+                this.selectedAddressId = address?.id;
+                this.formData = this.extractFormDataFromAddressModel(address);
+            },
+            async save() {
                 try {
                     this.interactive = false;
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
 
                     let r = undefined;
                     if (!this.selectedAddressId) {
                         r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
-                            cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                            cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                             address: this.formData,
                         });
                     } else {
                         // todo: save current customer address data
                         r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
-                            cart_id: window.justCheckMeOutApiV1.globals.getCartId(),
+                            cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                             customer_address_id: this.selectedAddressId,
                         });
                     }
 
-                    this.tryExtractFormDataFromGqlData(r.data?.setBillingAddressOnCart);
-                    this.tryExtractFormErrorsFromGqlData(r.errors);
+                    if (r.errors?.length > 0) {
+                        this.tryExtractFormMetaDataFromGqlData(r.errors);
+                    } else {
+                        this.tryExtractFormDataFromGqlData(r?.data?.setBillingAddressOnCart);
+                    }
                 } finally {
                     this.interactive = true;
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
                 }
 
-                window.justCheckMeOutApiV1.bus.fire('state.set.shipping-address', this);
+                await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-address', this);
             }
         };
     }

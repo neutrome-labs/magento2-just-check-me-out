@@ -3,19 +3,15 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
-<script>
+<script lang="ts">
     window.justCheckMeOutApiV1.component.createTotals = function (props = {
         refreshEvents: ['state.set.shipping-method', 'state.set.payment-method'],
     }) {
@@ -44,22 +40,46 @@ query totals(\$cart_id: String!) {
 GRAPHQL; ?>
 
         return {
-            totalsGqlWrapper: <?= $gql->makeSsrGqlCall(CART_TOTALS_GQL, [
-                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            loading: false,
+
+            totalsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(CART_TOTALS_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
-            init: function () {
-                for (const e of props.refreshEvents) {
-                    window.justCheckMeOutApiV1.bus.on(e, async () => await this.totalsGqlWrapper.refresh());
+
+            subtotal: undefined,
+            taxes: [],
+            grandTotal: undefined,
+
+            tryExtractGqlData(data) {
+                if (data?.cart?.prices) {
+                    this.subtotal = data.cart.prices.subtotal_excluding_tax;
+                    this.taxes = data.cart.prices.applied_taxes;
+                    this.grandTotal = data.cart.prices.grand_total;
                 }
             },
-            subtotal: function () {
-                return this.totalsGqlWrapper?.data?.cart?.prices?.subtotal_excluding_tax;
-            },
-            taxes: function () {
-                return this.totalsGqlWrapper?.data?.cart?.prices?.applied_taxes ?? [];
-            },
-            grandTotal: function () {
-                return this.totalsGqlWrapper?.data?.cart?.prices?.grand_total;
+
+            init() {
+                this.tryExtractGqlData(this.totalsGql?.data);
+
+                this.$watch('grandTotal', async (t1, t0) => {
+                    if (t1?.value !== t0?.value) {
+                        await window.justCheckMeOutApiV1.bus.fire('totals.grand-total-changed', t1.value);
+                    }
+                });
+
+                for (const e of props.refreshEvents) {
+                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                        this.loading = true;
+                        try {
+                            await this.totalsGql.refresh({
+                                'cart_id': window.justCheckMeOutApiV1.globals.cartId(),
+                            })
+                            this.tryExtractGqlData(this.totalsGql.data);
+                        } finally {
+                            this.loading = false;
+                        }
+                    });
+                }
             },
         };
     }

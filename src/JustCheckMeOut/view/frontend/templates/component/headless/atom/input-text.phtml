@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use PerspectiveTeam\HeadlessComponents\Block\Headless;
@@ -7,12 +6,42 @@ use PerspectiveTeam\HeadlessComponents\Block\Headless;
 /** @var Headless $block */
 /** @var Escaper $escaper */
 
-$attributes = $block->getData('attributes') ?? [];
-$attributes['type'] = $attributes['type'] ?? 'text';
+
+$type = $block->getData('type') ?? 'text';
+$name = $block->getData('name');
+$key = uniqid("input-text_{$name}_");
+
+$label = $block->getData('label') ?? '';
+
+$managedFlags = [
+    'required' => false,
+];
+
+$attributesHtml = $block->attributesHtmlGenerator->generate(
+    $block->getData('attributes'),
+    function ($key, $value) use (&$managedFlags) {
+        if ($key === 'required') {
+            $managedFlags['required'] = $value !== 'false';
+        }
+    }
+);
+$wrapperAttributesHtml = $block->attributesHtmlGenerator->generate($block->getData('wrapper'));
 ?>
 
-<input
-    <?php foreach ($attributes as $k => $v) {
-        echo " $k=\"$v\"";
-    } ?>
->
+<div x-data="{state: '', subtitle: undefined}"
+     :class="'field <?= $managedFlags['required'] ? 'required' : '' ?>' + (state === 'error' ? ' _error' : '')"
+    <?= $wrapperAttributesHtml ?>>
+    <?php if (strlen($label)): ?>
+        <label class="label" for="<?= $key ?>">
+            <span><?= $label ?></span>
+        </label>
+    <?php endif; ?>
+    <div class="control">
+        <input class="input-text" id="<?= $key ?>" type="<?= $type ?>" name="<?= $name ?>" <?= $attributesHtml ?>/>
+    </div>
+    <template x-if="state === 'error' && subtitle?.length">
+        <div class="field-error">
+            <span x-text="subtitle"></span>
+        </div>
+    </template>
+</div>

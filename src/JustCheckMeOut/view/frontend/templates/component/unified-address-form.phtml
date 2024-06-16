@@ -2,149 +2,275 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
 
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
 
-$quote = $quoteViewModel->getQuote();
-$address = $quote->getShippingAddress();
+$address = $block->quoteViewModel->getQuote()->getShippingAddress();
 
+$constructorId = uniqid();
 $formId = uniqid('unified-address-form_');
-$addressesRadioListKey = uniqid('customer-shipping-address-')
+$addressesRadioListKey = uniqid('customer-shipping-address-');
 ?>
 
-<form id="<?= $formId ?>" x-data="window.justCheckMeOutApiV1.component.createUnifiedAddressForm(
-    document.querySelector(<?= "`#$formId > div[x-ref=email]`" ?>)
-)" @submit.prevent="await save()">
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh addresses',
-        'attributes' => ['type' => 'button', '@click' => 'await addressBookGqlWrapper.refresh()']
-    ]) ?>
+<script>
+    function createUnifiedAddressForm<?=$constructorId?>(customerEmailFormEl) {
+        const formComponent = window.justCheckMeOutApiV1.component.createQuoteShippingAddressForm();
+        return {
+            ...formComponent,
+            unifiedInteractive: true,
+            init() {
+                formComponent.init.bind(this)();
+            },
+            async unifiedSave() {
+                try {
+                    this.unifiedInteractive = false;
+                    await Alpine.$data(customerEmailFormEl).save();
+                    await this.save();
+                } finally {
+                    this.unifiedInteractive = true;
+                }
+            }
+        }
+    }
+</script>
+<form id="<?= $formId ?>"
+      x-data="createUnifiedAddressForm<?= $constructorId ?>($el.querySelector(`[x-ref=email]`))"
+      @submit.prevent="await unifiedSave()">
+    <div style="flex: 1">
+        <fieldset class="field" x-data="window.justCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'email',
+                    'name' => 'email',
+                    'label' => __('Email'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getEmail(),
+                        'x-model' => 'displayEmail',
+                    ]
+                ], 'unified-address-form.input-email') ?>
+            </div>
+        </fieldset>
 
-    <ul>
-        <template x-for="address in addressesFromAddressBook()" :key="address.id">
-            <li>
-                <span>
-                    <input type="radio"
-                           name="<?= $addressesRadioListKey ?>"
-                           :value="address.id"
-                           :checked="selectedAddressId === address.id"
-                           @click="await selectAddressFromBook(address)"
-                    />
-                    <span x-text="`#${address.id}`"></span>
-                </span>
-                <p>
-                    <span x-text="address.firstname"></span>
-                    <span x-text="address.lastname"></span>
-                </p>
-                <p>
-                    <span x-text="address.telephone"></span>
-                </p>
-                <p>
-                    <span x-text="address.city"></span>
-                    <span x-text="address.street"></span>
-                </p>
-            </li>
-        </template>
-        <li>
-            <p>
-                <input type="radio"
-                       name="<?= $addressesRadioListKey ?>"
-                       value="0"
-                       :checked="!selectedAddressId"
-                       @click="await selectAddressFromBook(null)"
-                />
-                <span>Use new address</span>
-            </p>
-        </li>
-    </ul>
+        <fieldset class="field">
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'telephone',
+                    'label' => __('Telephone'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getTelephone(),
+                        'x-model' => 'formData.telephone',
+                        'x-effect' => 'state = formMetaData?.telephone?.touched ? (formMetaData?.telephone?.valid ? "" : "error") : ""; subtitle = formMetaData?.telephone?.subtitle',
+                        '@focusin' => 'setFieldMetaData("telephone", "valid", true); setFieldMetaData("telephone", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("telephone", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-telephone') ?>
+            </div>
 
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh address form',
-        'attributes' => ['type' => 'button', '@click' => 'await addressGqlWrapper.refresh()']
-    ]) ?>
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'firstname',
+                    'label' => __('Firstname'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getFirstname(),
+                        'x-model' => 'formData.firstname',
+                        'x-effect' => 'state = formMetaData?.firstname?.touched ? (formMetaData?.firstname?.valid ? "" : "error") : ""; subtitle = formMetaData?.firstname?.subtitle',
+                        '@focusin' => 'setFieldMetaData("firstname", "valid", true); setFieldMetaData("firstname", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("firstname", "touched", true)',
+                        '@change' => 'await unifiedSave()',
+                    ]
+                ], 'unified-address-form.input-firstname') ?>
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'lastname',
+                    'label' => __('Lastname'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getLastname(),
+                        'x-model' => 'formData.lastname',
+                        'x-effect' => 'state = formMetaData?.lastname?.touched ? (formMetaData?.lastname?.valid ? "" : "error") : ""; subtitle = formMetaData?.lastname?.subtitle',
+                        '@focusin' => 'setFieldMetaData("lastname", "valid", true); setFieldMetaData("lastname", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("lastname", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-lastname') ?>
+            </div>
 
-    <div x-data="window.justCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
-        <?= $components->render('atom/button', [
-            'text' => '[dev] refresh customer data',
-            'attributes' => ['type' => 'button', '@click' => 'await emailGqlWrapper.refresh()']
-        ]) ?>
+            <?php const COUNTRIES_GQL = <<<GRAPHQL
+query {
+  countries {
+    id
+    full_name_locale
+  }
+}
+GRAPHQL;
 
-        <?= $components->render('block/input-text', [
-            'label' => 'Email',
-            'attributes' => [
-                'type' => 'email',
-                'name' => 'email',
-                'required' => 1,
-                'value' => $address->getEmail(),
-                'x-model' => 'displayEmail',
-            ]
-        ], 'justcheckmeout.onepage.customer-email-form.input-email') ?>
+            $countryRegionWrapperXData = <<<JS
+({
+    countriesGql: {$block->ssrGraphqlViewModel->makeSsrGqlCall(COUNTRIES_GQL)},
+    managedRegions: null,
+    init() {
+        this.\$watch('formData.country_code', async (value) => {
+            const country = Alpine.\$data(\$el.querySelector(`[x-ref=country_code]`)).options.find(x => x.id === value);
+            this.managedRegions = country?.regions && country.regions.length > 0 ? country.regions : null;
+        });
+    }
+})
+JS; ?>
+            <div class="justcheckmeout__unified_address_form__fieldset_row"
+                 x-data="<?= $escaper->escapeHtmlAttr($countryRegionWrapperXData) ?>"
+            >
+                <?= $block->headlessComponentRenderer->render('atom/input-select', [
+                    'props' => <<<JS
+({
+    options: countriesGql?.data?.countries?.map(x => {
+            return {
+                id: x.id,
+                label: x.full_name_locale,
+            };
+        }) ?? [],
+    selected: formData.country_code,
+})
+JS,
+                    'name' => 'country_code',
+                    'label' => __('Country'),
+                    'wrapper' => [
+                        'x-ref' => 'country_code',
+                        'x-effect' => <<<JS
+await (async () => {
+    const r = await window.fetchMagento2Gql(
+        `query getRegions(\$country_id: String!) {
+  country(id: \$country_id) {
+    available_regions {
+      id
+      code
+      name
+    }
+  }
+}`, {'country_id': formData.country_code});
+    managedRegions = r?.data?.country?.available_regions?.map(r => {
+        return {
+            id: r.id,
+            label: r.name,
+            code: r.code
+        };
+    }) ?? null;
+})()
+JS,
+                    ],
+                    'select' => [
+                        'required' => 1,
+                        'x-model' => 'formData.country_code',
+                        '@change' => 'formData.region = formData.city = formData.postcode = ""; formData.region_id = undefined; formData.street = []',
+                    ],
+                    'item' => [
+                        ':selected' => 'option.id == formData.country_code',
+                    ],
+                ], 'unified-address-form.input-country') ?>
+                <template x-if="managedRegions !== null">
+                    <?= $block->headlessComponentRenderer->render('atom/input-select', [
+                        'props' => '({selected: formData.region_id})',
+                        'name' => 'region_id',
+                        'label' => __('Region'),
+                        'wrapper' => [
+                            'x-effect' => 'options = managedRegions'
+                        ],
+                        'select' => [
+                            'required' => 1,
+                            'x-model' => 'formData.region_id',
+                            '@change' => 'formData.region = undefined; await unifiedSave()',
+                        ],
+                        'item' => [
+                            ':selected' => 'option.id == formData.region_id',
+                        ],
+                    ], 'unified-address-form.input-region_id') ?>
+                </template>
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'region',
+                    'label' => __('Region'),
+                    'wrapper' => [
+                        'x-show' => 'managedRegions === null'
+                    ],
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getRegion(),
+                        'x-model' => 'formData.region',
+                        'x-effect' => 'state = formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
+                        '@focusin' => 'setFieldMetaData("region", "valid", true); setFieldMetaData("region", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("region", "touched", true)',
+                        '@change' => 'formData.region_id = undefined; await unifiedSave()',
+                    ]
+                ], 'unified-address-form.input-region') ?>
+            </div>
+
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'city',
+                    'label' => __('City'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getCity(),
+                        'x-model' => 'formData.city',
+                        'x-effect' => 'state = formMetaData?.city?.touched ? (formMetaData?.city?.valid ? "" : "error") : ""; subtitle = formMetaData?.city?.subtitle',
+                        '@focusin' => 'setFieldMetaData("city", "valid", true); setFieldMetaData("city", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("city", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-city') ?>
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'postcode',
+                    'label' => __('Postcode'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getPostcode(),
+                        'x-model' => 'formData.postcode',
+                        'x-effect' => 'state = formMetaData?.postcode?.touched ? (formMetaData?.postcode?.valid ? "" : "error") : ""; subtitle = formMetaData?.postcode?.subtitle',
+                        '@focusin' => 'setFieldMetaData("postcode", "valid", true); setFieldMetaData("postcode", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("postcode", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-postcode') ?>
+            </div>
+
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'street_1',
+                    'label' => __('Street'),
+                    'attributes' => [
+                        'required' => 1,
+                        'value' => $address->getStreetLine(1),
+                        'x-model' => 'formData.street[0]',
+                        'x-effect' => 'state = formMetaData?.street?.touched ? (formMetaData?.street?.valid ? "" : "error") : ""; subtitle = formMetaData?.street?.subtitle',
+                        '@focusin' => 'setFieldMetaData("street", "valid", true); setFieldMetaData("street", "subtitle", undefined)',
+                        '@focusout' => 'setFieldMetaData("street", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-street_1') ?>
+            </div>
+            <div class="justcheckmeout__unified_address_form__fieldset_row">
+                <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                    'type' => 'text',
+                    'name' => 'street_2',
+                    'attributes' => [
+                        'value' => $address->getStreetLine(2),
+                        'x-model' => 'formData.street[1]',
+                        '@focusout' => 'setFieldMetaData("street", "touched", true)',
+                        '@change' => 'await unifiedSave()'
+                    ]
+                ], 'unified-address-form.input-street_2') ?>
+            </div>
+        </fieldset>
     </div>
-
-    <?= $components->render('block/address-fieldset', [
-        'fields' => [
-            'firstname' => [
-                'required' => 1,
-                'label' => 'First Name',
-                'value' => $address->getFirstname(),
-                'x-model' => 'formData.firstname',
-            ],
-            'lastname' => [
-                'required' => 1,
-                'label' => 'Last Name',
-                'value' => $address->getLastname(),
-                'x-model' => 'formData.lastname',
-            ],
-            'telephone' => [
-                'label' => 'Telephone',
-                'value' => $address->getTelephone(),
-                'x-model' => 'formData.telephone',
-            ],
-            'country' => [
-                'required' => 1,
-                'label' => 'Country',
-                'value' => $address->getCountryId(),
-                'x-model' => 'formData.country_code',
-            ],
-            'country2' => [
-                'template' => 'block/input-select',
-                'required' => 1,
-                'label' => 'Country',
-                'value' => $address->getCountry(),
-                'x-model' => 'formData.country_code',
-            ],
-            'city' => [
-                'required' => 1,
-                'label' => 'City',
-                'value' => $address->getCity(),
-                'x-model' => 'formData.city',
-            ],
-            'postcode' => [
-                'required' => 1,
-                'label' => 'Postcode',
-                'value' => $address->getPostcode(),
-                'x-model' => 'formData.postcode',
-            ],
-            'street_1' => [
-                'required' => 1,
-                'label' => 'Street',
-                'value' => $address->getStreetLine(1),
-                'x-model' => 'formData.street[0]',
-            ],
-        ]
-    ]) ?>
-
-    <?= $components->render('atom/button', [
-        'text' => '[dev] save explicitly',
-        'attributes' => ['type' => 'submit']
-    ]) ?>
 </form>

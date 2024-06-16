@@ -2,47 +2,57 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
 
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
+$component = $block->configManager->getComponentConfig('shipping-method-list', 'optimistic')
+    ? "createOptimisticShippingMethodList"
+    : 'createShippingMethodList';
 
-$radioListKey = uniqid('shipping_method_');
+$component = <<<JS
+({
+    ...window.justCheckMeOutApiV1.component.{$component}(),
+    radioItems: function () {
+        return this.methodsAvailable?.map(m => {
+            return {
+                id: m.carrier_code + '_' + m.method_code,
+                label: m.carrier_title + ' ' + m.method_title + ' • ' + m.price_incl_tax.value + ' ' + m.price_incl_tax.currency,
+            };
+        });
+    }
+})
+JS;
 ?>
 
-<form action="#" x-data="window.justCheckMeOutApiV1.component.createShippingMethodList()">
-    <template x-show="errors().length > 0">
-        <ul style="border: 1px solid red">
-            <template x-for="error in errors()">
-                <li><span x-text="error"></span></li>
-            </template>
-        </ul>
+<form action="#" x-data="<?= $escaper->escapeHtmlAttr($component) ?>">
+    <div class="step-title" style="display: flex; align-items: center; gap: 10px; font-size: 2rem; padding-bottom: 10px">
+        <span><?= __('Shipping Method') ?></span>
+        <?= $block->headlessComponentRenderer->render('atom/loader', [
+            'attributes' => ['x-show' => '!interactive'],
+        ]) ?>
+    </div>
+    <?= $block->headlessComponentRenderer->render('block/messages', [
+        'scope' => 'shipping-method-list',
+    ], 'shipping-method-list.messages') ?>
+
+    <template x-if="!methodsAvailable || methodsAvailable.length === 0">
+        <div style="display: flex; align-items: center; justify-content: center">
+            <span><?= __('No shipping information available') ?></span>
+        </div>
     </template>
-
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh',
-        'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
-    ]) ?>
-
-    <?= $components->render('block/radio-list-with-details', [
-        'key' => $radioListKey,
-        'alpine' => [
-            'expr' => [
-                'disabled' => '!interactive',
-                'items' => 'methodsAvailable()',
-                'value' => '`${item.carrier_code}_${item.method_code}`',
-                'current' => 'currentMethod()',
-                'label' => '`${item.carrier_title} ${item.method_title} - ${item.price_incl_tax.value} ${item.price_incl_tax.currency}`',
-                'detail' => 'item.details_html',
-                'select' => 'await selectMethod(item)',
+    <template x-if="methodsAvailable?.length > 0">
+        <?= $block->headlessComponentRenderer->render('block/radio-list-with-collapsible-view', [
+            'key' => uniqid('shipping_method_'),
+            'props' => '{items: radioItems(), selected: selectedMethod, sharedViewHtml: selectedMethodViewHtml}',
+            'wrapper' => [
+                'x-effect' => 'items = radioItems(); disabled = !interactive',
+                'x-model' => 'uiSelectedMethod',
             ],
-        ]
-    ], 'justcheckmeout.onepage.shipping-method-list.list') ?>
+            'item' => [
+                'x-effect' => 'sharedViewHtml = selectedMethodViewHtml',
+            ],
+        ], 'shipping-method-list.items') ?>
+    </template>
 </form>

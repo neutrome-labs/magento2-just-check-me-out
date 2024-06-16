@@ -2,21 +2,12 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
-
-// todo: 1 в 1 копипаста с примера из оф модуля
 ?>
 
-<div x-init="getStripeModuleConfiguration()">
+<div x-init="mountPaymentElement()" style="padding-top: 10px;">
     <div id="payment-element"></div>
 </div>

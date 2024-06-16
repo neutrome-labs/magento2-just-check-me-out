@@ -5,7 +5,11 @@
         <arguments>
             <argument name="kind" xsi:type="string">block</argument>
             <argument name="argument" xsi:type="array">
+                <item name="class" xsi:type="string">PerspectiveTeam\JustCheckMeOut\Block\Stateful</item>
                 <item name="template" xsi:type="string">PerspectiveTeam_JustCheckMeOutWithStripe::view.phtml</item>
+            </argument>
+            <argument name="data" xsi:type="array">
+                <item name="optimistic" xsi:type="boolean">1</item>
             </argument>
         </arguments>
     </virtualType>

@@ -11,6 +11,8 @@ interface AdditionalViewInterface
 
     public const KIND_PLAIN_HTML = 'plain_html';
 
+    public function isOptimistic(): bool;
+
     public function getKind(): string;
 
     public function getArgument(): mixed;

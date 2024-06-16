@@ -3,16 +3,12 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
-
-/** @var SsrGraphqlViewModel $gql */
-$gql = $block->getData('ssrGqlViewModel');
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
 ?>
 
 <script>
@@ -43,38 +39,58 @@ GRAPHQL; ?>
 
         return {
             interactive: true,
-            init: function () {
+            init() {
                 this.$watch('emailGqlWrapper', () => {
                     this.displayEmail = this.cartEmail() || this.customerEmail();
                 });
+
+                window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('email', 0, async (_, final) => {
+                    if (final) {
+                        await this.save();
+                    }
+
+                    const ok = this.displayEmail?.length > 0;
+                    return {
+                        state: !this.interactive ? 'pending' : (ok ? 'ok' : 'error'),
+                        message: ok ? 'Email looks ok!' : 'Please fill the email field',
+                    };
+                });
             },
-            emailGqlWrapper: <?= $gql->makeSsrGqlCall(UNIFIED_EMAIL_GQL, [
-                'cart_id' => $quoteViewModel->getMaskedQuoteId(),
+            emailGqlWrapper: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(UNIFIED_EMAIL_GQL, [
+                'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
             ]) ?>,
             displayEmail: <?php
-            $email = $quoteViewModel->getQuote()->getCustomerEmail()
-                ?? $quoteViewModel->getQuote()->getShippingAddress()->getEmail();
+            $email = $block->quoteViewModel->getQuote()->getCustomerEmail()
+                ?? $block->quoteViewModel->getQuote()->getShippingAddress()->getEmail();
             echo "'$email'";
             ?>,
             displayPassword: '',
-            cartEmail: function () {
+            cartEmail() {
                 return this.emailGqlWrapper?.data?.cart?.email ?? '';
             },
-            customerEmail: function () {
+            customerEmail() {
                 return this.emailGqlWrapper?.data?.customer?.email ?? '';
             },
-            customerIsLoggedIn: function () {
+            customerIsLoggedIn() {
                 return !!this.customerEmail();
             },
-            save: async function () {
+            async save() {
                 if (this.customerIsLoggedIn() || this.displayEmail === this.cartEmail()) {
                     return;
                 }
 
-                await window.fetchMagento2Gql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
-                    cart_id: this.emailGqlWrapper.ssr.variables.cart_id,
-                    email: this.displayEmail,
-                });
+                this.interactive = false;
+                await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
+
+                try {
+                    await window.fetchMagento2Gql(`<?= SET_GUEST_EMAIL_ON_CART_GQL ?>`, {
+                        cart_id: window.justCheckMeOutApiV1.globals.cartId(),
+                        email: this.displayEmail,
+                    });
+                } finally {
+                    this.interactive = true;
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
+                }
             }
         };
     }

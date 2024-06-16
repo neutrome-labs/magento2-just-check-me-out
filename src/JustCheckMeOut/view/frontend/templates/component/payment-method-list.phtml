@@ -2,39 +2,50 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
-/** @var Template $block */
+/** @var Stateful $block */
 /** @var Escaper $escaper */
 
-/** @var QuoteViewModel $quoteViewModel */
-$quoteViewModel = $block->getData('quoteViewModel');
-/** @var HeadlessComponentRenderer $components */
-$components = $block->getData('headlessComponentRenderer');
+$component = $block->configManager->getComponentConfig('payment-method-list', 'optimistic')
+    ? "createOptimisticPaymentMethodList"
+    : 'createPaymentMethodList';
 
-$radioListKey = uniqid('payment_method_');
+$component = <<<JS
+({
+    ...window.justCheckMeOutApiV1.component.{$component}(),
+    radioItems: function () {
+        return this.methodsAvailable?.map(m => {
+            return {
+                id: m.code,
+                label: m.title,
+            };
+        });
+    }
+})
+JS;
 ?>
 
-<form action="#" x-data="window.justCheckMeOutApiV1.component.createPaymentMethodList()">
-    <?= $components->render('atom/button', [
-        'text' => '[dev] refresh',
-        'attributes' => ['type' => 'button', '@click' => 'await methodsGqlWrapper.refresh()']
-    ]) ?>
+<form action="#" x-data="<?= $escaper->escapeHtmlAttr($component) ?>">
+    <?= $block->headlessComponentRenderer->render('block/messages', [
+        'scope' => 'payment-method-list',
+    ], 'payment-method-list.messages') ?>
 
-    <?= $components->render('block/radio-list-with-details', [
-        'key' => $radioListKey,
-        'alpine' => [
-            'expr' => [
-                'disabled' => '!interactive',
-                'items' => 'methodsAvailable()',
-                'value' => 'item.code',
-                'current' => 'currentMethod()',
-                'label' => 'item.title',
-                'detail' => 'item.details_html',
-                'select' => 'await selectMethod(item)',
-            ],
-        ]
-    ], 'justcheckmeout.onepage.payment-method-list.list') ?>
+    <?= $block->headlessComponentRenderer->render('block/radio-list-with-collapsible-view', [
+        'key' => uniqid('payment_method_'),
+        'empty' => __('No payment method'),
+        'props' => <<<JS
+({
+    items: radioItems(),
+    selected: selectedMethod
+})
+JS,
+        'wrapper' => [
+            'x-effect' => 'items = radioItems(); disabled = !interactive',
+            'x-model' => 'uiSelectedMethod',
+        ],
+        'item' => [
+            'x-effect' => 'sharedViewHtml = selectedMethodViewHtml',
+        ],
+    ], 'payment-method-list.items') ?>
 </form>

@@ -1,0 +1,59 @@
+<?php
+
+use Magento\Framework\Escaper;
+use PerspectiveTeam\HeadlessComponents\Block\Headless;
+
+/** @var Headless $block */
+/** @var Escaper $escaper */
+
+$key = uniqid($block->getData('key'));
+
+$itemAttributesHtml = $block->attributesHtmlGenerator->generate($block->getData('item'));
+$wrapperAttributesHtml = $block->attributesHtmlGenerator->generate($block->getData('wrapper'));
+
+$component = <<<JS
+(
+    (props = {
+        items: [],
+        selected: undefined,
+        disabled: false,
+        sharedViewHtml: undefined,
+    }) => {
+        return {
+            items: props?.items ?? [],
+            selected: props?.selected,
+            disabled: props?.disabled ?? false,
+            sharedViewHtml: props?.sharedViewHtml,
+        };
+    }
+)
+JS;
+$component .= '(' . $block->getData('props') . ')';
+?>
+
+<div style="display: flex; flex-direction: column; gap: 5px;"
+     x-data="<?= $component ?>"
+     x-modelable="selected"
+    <?= $wrapperAttributesHtml ?>
+>
+    <template x-for="item in items" :key="item.id">
+        <div class="justcheckmeout__headless_radio_list__item"
+             :style="selected === item.id && 'border-color: blue'"
+             @click="if (!disabled) selected = item.id"
+            <?= $itemAttributesHtml ?>
+        >
+            <input type="radio"
+                   name="<?= $key ?>"
+                   :value="item.id"
+                   :disabled="disabled"
+                   x-model="selected"
+            >
+            <strong><label x-text="item.label"></label></strong>
+            <template x-if="selected === item.id && !!sharedViewHtml">
+                <div x-data="{open: false}" x-init="$nextTick(() => open = true)"
+                     x-show="open" x-collapse
+                     x-html="sharedViewHtml"></div>
+            </template>
+        </div>
+    </template>
+</div>

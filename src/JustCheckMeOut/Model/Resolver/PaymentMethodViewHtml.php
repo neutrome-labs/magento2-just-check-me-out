@@ -8,7 +8,7 @@ use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use PerspectiveTeam\JustCheckMeOut\Service\AdditionalViewRenderer;
 use PerspectiveTeam\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry;
 
-class PaymentMethodDetailsHtml implements ResolverInterface
+class PaymentMethodViewHtml implements ResolverInterface
 {
 
     public function __construct(

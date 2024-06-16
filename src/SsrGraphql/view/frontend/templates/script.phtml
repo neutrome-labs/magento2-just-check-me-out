@@ -13,7 +13,8 @@ $gql = $block->getData('ssrGqlViewModel');
 ?>
 
 <script>
-    window.fetchMagento2Gql = async function (query, variables = {}) {
+    window.fetchMagento2Gql = async function (query, variables = {}, method = 'POST') {
+        // todo: add support for GET requests
         const r = await fetch('<?= $gql->getBaseUrl() ?>graphql', {
             method: 'POST',
             headers: {
@@ -28,7 +29,13 @@ $gql = $block->getData('ssrGqlViewModel');
     }
 
     window.createMagento2SsrGqlStub = function (query, variables, response = undefined) {
-        // todo: if debug
+        <?php if ($gql->isDebug()): ?>
+        console.log('ssr graphql stub: ', {
+            query,
+            variables,
+            meta: response.__debug,
+        });
+
         if (response?.errors?.length > 0) {
             console.error('error resolving ssr graphql response: ', {
                 query,
@@ -36,9 +43,11 @@ $gql = $block->getData('ssrGqlViewModel');
                 errors: response.errors.length === 1 ? response.errors[0] : response.errors,
             });
         }
+        <?php endif; ?>
 
         return {
             ssr: {
+                query,
                 variables,
                 response,
             },
@@ -46,24 +55,25 @@ $gql = $block->getData('ssrGqlViewModel');
             data: response?.data,
             errors: response?.errors,
             fetch: async function (variables) {
-                const r = await window.fetchMagento2Gql(query, {
+                const r = await window.fetchMagento2Gql(this.ssr.query, {
                     ...this.ssr.variables,
                     ...variables,
                 });
 
-                // todo: if debug
+                <?php if ($gql->isDebug()): ?>
                 if (r.errors?.length > 0) {
                     console.error('error fetching graphql response: ', {
-                        query,
-                        variables,
+                        query: this.ssr.query,
+                        variables: this.ssr.variables,
                         errors: r.errors.length === 1 ? r.errors[0] : r.errors,
                     });
                 }
+                <?php endif; ?>
 
                 return r;
             },
-            refresh: async function () {
-                const r = await this.fetch();
+            refresh: async function (variables) {
+                const r = await this.fetch(variables);
                 this.fresh = true;
                 this.data = r?.data;
                 this.errors = r?.errors;

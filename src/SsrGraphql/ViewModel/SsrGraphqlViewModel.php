@@ -2,27 +2,25 @@
 
 namespace PerspectiveTeam\SsrGraphql\ViewModel;
 
-use Magento\Framework\Async\DeferredInterface;
-use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use PerspectiveTeam\SsrGraphql\Model\Resolver;
+use PerspectiveTeam\SsrGraphql\Api\ResolverInterface;
+use PerspectiveTeam\SsrGraphql\Service\ConfigManager;
 
 class SsrGraphqlViewModel implements ArgumentInterface
 {
 
-    private array $deferred = [];
-
     public function __construct(
+        private readonly ConfigManager         $configManager,
         private readonly StoreManagerInterface $storeManager,
-        private readonly Resolver $resolver,
+        private readonly ResolverInterface     $resolver,
     )
     {
     }
 
-    public function getDeferred(string $key): ?DeferredInterface
+    public function isDebug(): bool
     {
-        return array_key_exists($key, $this->deferred) ? $this->deferred[$key] : null;
+        return $this->configManager->getDebug();
     }
 
     public function getBaseUrl(): string
@@ -30,17 +28,16 @@ class SsrGraphqlViewModel implements ArgumentInterface
         return $this->storeManager->getStore()->getBaseUrl();
     }
 
-    public function makeSsrGqlCall(string $query, array $variables = [], $options = null)
+    public function makeSsrGqlCall(string $query, array $variables = [])
     {
-        $uid = uniqid('PSTEAM_GQL_');
-        $this->deferred[$uid] = $this->resolver->deferResolve($query, $variables);
+        $data = $this->resolver->resolve($query, $variables);
 
         $query = json_encode($query);
         $variables = json_encode($variables);
-        $options = $options !== null ? json_encode($options) : '';
+        $data = json_encode($data);
 
         return <<<JS
-window.createMagento2SsrGqlStub($query, $variables, %{$uid}%, $options)
+window.createMagento2SsrGqlStub($query, $variables, $data)
 JS;
     }
 }

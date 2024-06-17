@@ -14,16 +14,14 @@
     "autoload": {
         "files": [
             "src/SsrGraphql/registration.php",
-            "src/SsrGraphql/registration.php",
+            "src/HeadlessComponents/registration.php",
             "src/JustCheckMeOut/registration.php",
-            "src/JustCheckMeOutThemeMinimal/registration.php",
             "src/JustCheckMeOutWithStripe/registration.php"
         ],
         "psr-4": {
             "PerspectiveTeam\\SsrGraphql\\": "src/SsrGraphql/",
             "PerspectiveTeam\\HeadlessComponents\\": "src/HeadlessComponents/",
             "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/",
-            "PerspectiveTeam\\JustCheckMeOutThemeMinimal\\": "src/JustCheckMeOutThemeMinimal/",
             "PerspectiveTeam\\JustCheckMeOutWithStripe\\": "src/JustCheckMeOutWithStripe/"
         }
     },

@@ -50,6 +50,7 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
                         'required' => 1,
                         'value' => $address->getEmail(),
                         'x-model' => 'displayEmail',
+                        '@change' => 'await save()'
                     ]
                 ], 'unified-address-form.input-email') ?>
             </div>
@@ -65,9 +66,9 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
                         'required' => 1,
                         'value' => $address->getTelephone(),
                         'x-model' => 'formData.telephone',
-                        'x-effect' => 'state = formMetaData?.telephone?.touched ? (formMetaData?.telephone?.valid ? "" : "error") : ""; subtitle = formMetaData?.telephone?.subtitle',
-                        '@focusin' => 'setFieldMetaData("telephone", "valid", true); setFieldMetaData("telephone", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("telephone", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "telephone" && formMetaData?.telephone?.touched ? (formMetaData?.telephone?.valid ? "" : "error") : ""; subtitle = formMetaData?.telephone?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "telephone"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("telephone", "touched", true); setFieldMetaData("telephone", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-telephone') ?>
@@ -82,9 +83,9 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
                         'required' => 1,
                         'value' => $address->getFirstname(),
                         'x-model' => 'formData.firstname',
-                        'x-effect' => 'state = formMetaData?.firstname?.touched ? (formMetaData?.firstname?.valid ? "" : "error") : ""; subtitle = formMetaData?.firstname?.subtitle',
-                        '@focusin' => 'setFieldMetaData("firstname", "valid", true); setFieldMetaData("firstname", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("firstname", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "firstname" && formMetaData?.firstname?.touched ? (formMetaData?.firstname?.valid ? "" : "error") : ""; subtitle = formMetaData?.firstname?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "firstname"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("firstname", "touched", true); setFieldMetaData("firstname", "valid", true)',
                         '@change' => 'await unifiedSave()',
                     ]
                 ], 'unified-address-form.input-firstname') ?>
@@ -96,9 +97,9 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
                         'required' => 1,
                         'value' => $address->getLastname(),
                         'x-model' => 'formData.lastname',
-                        'x-effect' => 'state = formMetaData?.lastname?.touched ? (formMetaData?.lastname?.valid ? "" : "error") : ""; subtitle = formMetaData?.lastname?.subtitle',
-                        '@focusin' => 'setFieldMetaData("lastname", "valid", true); setFieldMetaData("lastname", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("lastname", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "lastname" && formMetaData?.lastname?.touched ? (formMetaData?.lastname?.valid ? "" : "error") : ""; subtitle = formMetaData?.lastname?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "lastname"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("lastname", "touched", true); setFieldMetaData("lastname", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-lastname') ?>
@@ -204,9 +205,9 @@ JS,
                         'required' => 1,
                         'value' => $address->getRegion(),
                         'x-model' => 'formData.region',
-                        'x-effect' => 'state = formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
-                        '@focusin' => 'setFieldMetaData("region", "valid", true); setFieldMetaData("region", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("region", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "region" && formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "region"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("region", "touched", true); setFieldMetaData("region", "valid", true)',
                         '@change' => 'formData.region_id = undefined; await unifiedSave()',
                     ]
                 ], 'unified-address-form.input-region') ?>
@@ -221,9 +222,9 @@ JS,
                         'required' => 1,
                         'value' => $address->getCity(),
                         'x-model' => 'formData.city',
-                        'x-effect' => 'state = formMetaData?.city?.touched ? (formMetaData?.city?.valid ? "" : "error") : ""; subtitle = formMetaData?.city?.subtitle',
-                        '@focusin' => 'setFieldMetaData("city", "valid", true); setFieldMetaData("city", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("city", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "city" && formMetaData?.city?.touched ? (formMetaData?.city?.valid ? "" : "error") : ""; subtitle = formMetaData?.city?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "city"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("city", "touched", true); setFieldMetaData("city", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-city') ?>
@@ -235,9 +236,9 @@ JS,
                         'required' => 1,
                         'value' => $address->getPostcode(),
                         'x-model' => 'formData.postcode',
-                        'x-effect' => 'state = formMetaData?.postcode?.touched ? (formMetaData?.postcode?.valid ? "" : "error") : ""; subtitle = formMetaData?.postcode?.subtitle',
-                        '@focusin' => 'setFieldMetaData("postcode", "valid", true); setFieldMetaData("postcode", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("postcode", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "postcode" && formMetaData?.postcode?.touched ? (formMetaData?.postcode?.valid ? "" : "error") : ""; subtitle = formMetaData?.postcode?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "postcode"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("postcode", "touched", true); setFieldMetaData("postcode", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-postcode') ?>
@@ -252,9 +253,9 @@ JS,
                         'required' => 1,
                         'value' => $address->getStreetLine(1),
                         'x-model' => 'formData.street[0]',
-                        'x-effect' => 'state = formMetaData?.street?.touched ? (formMetaData?.street?.valid ? "" : "error") : ""; subtitle = formMetaData?.street?.subtitle',
-                        '@focusin' => 'setFieldMetaData("street", "valid", true); setFieldMetaData("street", "subtitle", undefined)',
-                        '@focusout' => 'setFieldMetaData("street", "touched", true)',
+                        'x-effect' => 'state = focusedFieldKey != "street" && formMetaData?.street?.touched ? (formMetaData?.street?.valid ? "" : "error") : ""; subtitle = formMetaData?.street?.subtitle',
+                        '@focusin' => 'focusedFieldKey = "street"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("street", "touched", true); setFieldMetaData("street", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-street_1') ?>
@@ -266,7 +267,8 @@ JS,
                     'attributes' => [
                         'value' => $address->getStreetLine(2),
                         'x-model' => 'formData.street[1]',
-                        '@focusout' => 'setFieldMetaData("street", "touched", true)',
+                        '@focusin' => 'focusedFieldKey = "street"',
+                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("street", "touched", true); setFieldMetaData("street", "valid", true)',
                         '@change' => 'await unifiedSave()'
                     ]
                 ], 'unified-address-form.input-street_2') ?>

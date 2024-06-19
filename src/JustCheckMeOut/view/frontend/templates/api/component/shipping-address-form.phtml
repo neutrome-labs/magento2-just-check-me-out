@@ -173,13 +173,10 @@ GRAPHQL; ?>
                     ? addresses[0]
                     : null;
 
-                const newFormData = this.formData;
-                Object.entries(this.extractFormDataFromAddressModel(address)).forEach(([k, v]) => {
-                    if (!v || this.focusedFieldKey === k) {
-                        return;
-                    }
-                    newFormData[k] = v;
-                });
+                const newFormData = this.extractFormDataFromAddressModel(address);
+                if (this.focusedFieldKey) {
+                    newFormData[this.focusedFieldKey] = this.formData[this.focusedFieldKey];
+                }
                 this.formData = newFormData;
             },
             tryUpdateFormMetaDataFromGqlData(errors) {
@@ -223,21 +220,20 @@ GRAPHQL; ?>
                     };
                 })
 
-                const defaultSelectedAddressId = parseInt(this.addressBookGql?.data?.customer?.default_shipping);
-                if (defaultSelectedAddressId > 0 && !this.tryLoadPersistedFormData()) { // first load with default address available
-                    const address = this.addressesFromAddressBook().find(a => a.id === defaultSelectedAddressId);
-                    this.selectAddressFromBook(address);
-                    this.save();
-                } else {
-                    this.tryUpdateFormDataFromGqlData(this.addressGql?.data);
-                    this.tryUpdateFormMetaDataFromGqlData(this.addressGql?.errors);
-                }
-
-                // todo: merge with ssr data
                 const persistedFormData = this.tryLoadPersistedFormData();
                 if (persistedFormData) {
                     this.formData = persistedFormData.formData;
                     this.formMetaData = persistedFormData.formMetaData;
+                } else {
+                    const defaultSelectedAddressId = parseInt(this.addressBookGql?.data?.customer?.default_shipping);
+                    if (defaultSelectedAddressId > 0) { // first load with default address available
+                        const address = this.addressesFromAddressBook().find(a => a.id === defaultSelectedAddressId);
+                        this.selectAddressFromBook(address);
+                        this.save();
+                    } else {
+                        this.tryUpdateFormDataFromGqlData(this.addressGql?.data);
+                        this.tryUpdateFormMetaDataFromGqlData(this.addressGql?.errors);
+                    }
                 }
 
                 for (const e of props.bookRefreshEvents) {
@@ -300,7 +296,9 @@ GRAPHQL; ?>
                         });
                     }
 
-                    this.tryUpdateFormDataFromGqlData(r?.data?.setBillingAddressOnCart);
+                    if (!r.errors || r.errors.length === 0) {
+                        this.tryUpdateFormDataFromGqlData(r?.data?.setBillingAddressOnCart);
+                    }
                     this.tryUpdateFormMetaDataFromGqlData(r.errors);
                 } finally {
                     this.interactive = true;

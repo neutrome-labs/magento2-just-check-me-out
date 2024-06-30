@@ -4,7 +4,6 @@ namespace PerspectiveTeam\SsrGraphql\Model;
 
 use Magento\Framework\App\Area;
 use Magento\Framework\App\ObjectManager\ConfigLoader;
-use Magento\Framework\App\ObjectManagerFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Query\QueryProcessor;
@@ -13,6 +12,7 @@ use Magento\Framework\GraphQl\Schema\SchemaGeneratorInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\GraphQl\Model\Query\ContextFactory;
 use PerspectiveTeam\SsrGraphql\Api\ResolverInterface;
+use PerspectiveTeam\SsrGraphql\Model\Framework\SsrGraphqlObjectManagerFactory;
 use PerspectiveTeam\SsrGraphql\Service\ConfigManager;
 
 class Resolver implements ResolverInterface
@@ -20,19 +20,13 @@ class Resolver implements ResolverInterface
 
     private ?ObjectManagerInterface $graphQlObjectManager = null;
 
-    private ?QueryProcessor $queryProcessor = null;
-
-    private ?SchemaGeneratorInterface $schemaGenerator = null;
-
     private ?Schema $schema = null;
-
-    private ?ContextFactory $contextFactory = null;
 
 
     public function __construct(
-        private readonly ObjectManagerFactory $objectManagerFactory,
-        private readonly ConfigLoader         $objectManagerConfigLoader,
-        private readonly ConfigManager        $configManager
+        private readonly SsrGraphqlObjectManagerFactory $objectManagerFactory,
+        private readonly ConfigLoader                   $objectManagerConfigLoader,
+        private readonly ConfigManager                  $configManager
     )
     {
     }
@@ -51,18 +45,12 @@ class Resolver implements ResolverInterface
 
     private function getQueryProcessor(): QueryProcessor
     {
-        if (!$this->queryProcessor) {
-            $this->queryProcessor = $this->getGraphqlObjectManager()->get(QueryProcessor::class);
-        }
-        return $this->queryProcessor;
+        return $this->getGraphqlObjectManager()->get(QueryProcessor::class);
     }
 
     private function getSchemaGenerator(): SchemaGeneratorInterface
     {
-        if (!$this->schemaGenerator) {
-            $this->schemaGenerator = $this->getGraphqlObjectManager()->get(SchemaGeneratorInterface::class);
-        }
-        return $this->schemaGenerator;
+        return $this->getGraphqlObjectManager()->get(SchemaGeneratorInterface::class);
     }
 
     private function getSchema(): Schema
@@ -75,10 +63,7 @@ class Resolver implements ResolverInterface
 
     private function getContextFactory(): ContextFactory
     {
-        if (!$this->contextFactory) {
-            $this->contextFactory = $this->getGraphqlObjectManager()->get(ContextFactory::class);
-        }
-        return $this->contextFactory;
+        return $this->getGraphqlObjectManager()->get(ContextFactory::class);
     }
 
     /**

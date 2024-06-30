@@ -6,6 +6,23 @@
                 type="PerspectiveTeam\JustCheckMeOut\Plugin\CheckoutControllerPlugin"/>
     </type>
 
+    <virtualType name="PerspectiveTeam\JustCheckMeOut\Virtual\Theme\Default"
+                 type="PerspectiveTeam\HeadlessComponents\Model\Theme">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="slug" xsi:type="string">default</item>
+                <item name="module" xsi:type="string">PerspectiveTeam_JustCheckMeOut</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="PerspectiveTeam\JustCheckMeOut\Model\Config\Backend\ThemesAvailable">
+        <arguments>
+            <argument name="themes" xsi:type="array">
+                <item name="default" xsi:type="object">PerspectiveTeam\JustCheckMeOut\Virtual\Theme\Default</item>
+            </argument>
+        </arguments>
+    </type>
+
     <virtualType name="flatrateShippingMethodAdditionalView" type="PerspectiveTeam\JustCheckMeOut\Model\AdditionalView">
         <arguments>
             <argument name="kind" xsi:type="string">plain_html</argument>

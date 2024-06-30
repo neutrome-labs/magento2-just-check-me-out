@@ -10,13 +10,7 @@ class ThemesAvailable implements OptionSourceInterface
 {
 
     public function __construct(
-        private readonly array $themes = [
-            'default' => new Theme([
-                ThemeInterface::PARENT => null,
-                ThemeInterface::SLUG => 'default',
-                ThemeInterface::MODULE => 'PerspectiveTeam_JustCheckMeOut'
-            ]),
-        ],
+        private readonly array $themes = []
     )
     {
     }

@@ -2,11 +2,7 @@
 declare(strict_types=1);
 
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -18,6 +14,9 @@ $scriptTagId = uniqid('justcheckmeout-api-script_');
 <script id="<?= $scriptTagId ?>">
     window.justCheckMeOutApiV1 = {
         globals: {
+            /**
+             * @return {string}
+             */
             cartId: function () {
                 return Alpine.store('justcheckmeout::cartId') ?? <?= "'$cartId'" ?>;
             },
@@ -42,15 +41,29 @@ $scriptTagId = uniqid('justcheckmeout-api-script_');
             },
         },
         bus: {
+            /**
+             * @param {string} event
+             * @param {(payload: any, abort: ?AbortController) => void|Promise<void>} callback
+             *
+             * @returns {void}
+             */
             on: function (event, callback) {
                 const events = Alpine.store(`justcheckmeout::events::${event}`) ?? [];
                 events.push(callback);
                 Alpine.store(`justcheckmeout::events::${event}`, events);
             },
-            fire: async function (event, payload) {
+            /**
+             * @param {string} event
+             * @param {any} payload
+             * @param {AbortController} abort
+             *
+             * @returns {Promise<void>}
+             */
+            fire: async function (event, payload = undefined, abort = undefined) {
                 const events = Alpine.store(`justcheckmeout::events::${event}`) ?? [];
                 for (const callback of events) {
-                    await callback(payload);
+                    abort?.signal.throwIfAborted();
+                    await callback(payload, abort);
                 }
             },
         },

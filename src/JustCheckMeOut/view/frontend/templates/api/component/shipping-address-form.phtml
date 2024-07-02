@@ -118,6 +118,7 @@ GRAPHQL; ?>
             ]) ?>,
 
             interactive: true,
+            autosavePoisonPill: new AbortController(),
             selectedAddressId: undefined,
             formData: {
                 street: [],
@@ -248,11 +249,13 @@ GRAPHQL; ?>
                 }
 
                 for (const e of props.formRefreshEvents) {
-                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                    window.justCheckMeOutApiV1.bus.on(e, async (_, abort) => {
                         try {
                             this.interactive = false;
 
-                            await this.addressGql.refresh({'cart_id': window.justCheckMeOutApiV1.globals.cartId()});
+                            await this.addressGql.refresh({
+                                'cart_id': window.justCheckMeOutApiV1.globals.cartId()
+                            }, {signal: abort?.signal});
                             this.tryUpdateFormDataFromGqlData(this.addressGql?.data);
                             this.tryUpdateFormMetaDataFromGqlData(this.addressGql?.errors);
                         } finally {
@@ -278,22 +281,25 @@ GRAPHQL; ?>
                 this.formData = this.extractFormDataFromAddressModel(address);
             },
             async save() {
+                this.autosavePoisonPill.abort('outdated');
+                this.autosavePoisonPill = new AbortController();
+
                 try {
                     this.interactive = false;
-                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
+                    await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards', undefined, this.autosavePoisonPill);
 
                     let r = undefined;
                     if (!this.selectedAddressId) {
                         r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
                             cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                             address: this.formData,
-                        });
+                        }, {signal: this.autosavePoisonPill.signal});
                     } else {
                         // todo: save current customer address data
                         r = await window.fetchMagento2Gql(`<?= SET_SHIPPING_ADDRESS_ON_CART_GQL ?>`, {
                             cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                             customer_address_id: this.selectedAddressId,
-                        });
+                        }, {signal: this.autosavePoisonPill.signal});
                     }
 
                     if (!r.errors || r.errors.length === 0) {
@@ -305,7 +311,8 @@ GRAPHQL; ?>
                     await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
                 }
 
-                await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-address', this);
+                await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-address', this, this.autosavePoisonPill);
+
             }
         };
     }

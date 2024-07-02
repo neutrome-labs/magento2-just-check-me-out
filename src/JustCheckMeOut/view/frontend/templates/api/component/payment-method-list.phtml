@@ -119,11 +119,11 @@ GRAPHQL;
                 })
 
                 for (const e of props.refreshEvents) {
-                    window.justCheckMeOutApiV1.bus.on(e, async () => {
+                    window.justCheckMeOutApiV1.bus.on(e, async (_, abort) => {
                         try {
                             this.interactive = false;
 
-                            await this.methodsGql.refresh();
+                            await this.methodsGql.refresh({}, {signal: abort?.signal});
                             this.tryExtractGqlData(this.methodsGql?.data);
                             this.tryExtractGqlErrors(this.methodsGql?.errors);
                         } finally {

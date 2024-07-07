@@ -61,7 +61,7 @@ GRAPHQL;
                 })
 
                 window.justCheckMeOutApiV1.bus.on('state.set.payment-method', payload => {
-                    this.currentPaymentMethodCode = payload;
+                    this.currentPaymentMethodCode = payload.code;
                 })
 
                 window.justCheckMeOutApiV1.bus.on('place-order.progress', payload => {

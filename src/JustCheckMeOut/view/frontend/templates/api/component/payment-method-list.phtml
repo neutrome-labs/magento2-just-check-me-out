@@ -159,7 +159,7 @@ GRAPHQL;
                     this.interactive = true;
                 }
 
-                await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
+                await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', {code: this.selectedMethod});
                 await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
             }
         };
@@ -236,7 +236,10 @@ GRAPHQL; ?>
                 this.selectedMethod = code;
 
                 if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>) {
-                    await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', this.selectedMethod);
+                    await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', {
+                        code: this.selectedMethod,
+                        deferred: true,
+                    });
                     await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
                 } else {
                     await realistic.selectMethod.bind(this)(code);

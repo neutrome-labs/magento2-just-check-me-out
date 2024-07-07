@@ -58,6 +58,18 @@ GRAPHQL; ?>
                 }
             },
 
+            async refresh(signal = null) {
+                this.loading = true;
+                try {
+                    await this.totalsGql.refresh({
+                        'cart_id': window.justCheckMeOutApiV1.globals.cartId(),
+                    }, {signal: signal})
+                    this.tryExtractGqlData(this.totalsGql.data);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
             init() {
                 this.tryExtractGqlData(this.totalsGql?.data);
 
@@ -68,16 +80,12 @@ GRAPHQL; ?>
                 });
 
                 for (const e of props.refreshEvents) {
-                    window.justCheckMeOutApiV1.bus.on(e, async () => {
-                        this.loading = true;
-                        try {
-                            await this.totalsGql.refresh({
-                                'cart_id': window.justCheckMeOutApiV1.globals.cartId(),
-                            })
-                            this.tryExtractGqlData(this.totalsGql.data);
-                        } finally {
-                            this.loading = false;
+                    window.justCheckMeOutApiV1.bus.on(e, async (payload, abort) => {
+                        if (e === 'state.set.payment-method' && payload?.deferred) {
+                            return;
                         }
+
+                        await this.refresh(abort?.signal)
                     });
                 }
             },

@@ -22,7 +22,7 @@ class ConfigManager
 
     public function replaceDefault(): bool
     {
-        return true;
+        return false;
     }
 
     public function getTheme(): string

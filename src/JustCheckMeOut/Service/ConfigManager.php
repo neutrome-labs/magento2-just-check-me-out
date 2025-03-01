@@ -30,6 +30,11 @@ class ConfigManager
         return 'default';
     }
 
+    public function isSsr(): bool
+    {
+        return false;
+    }
+
     public function getComponentConfig(string $name, string $key): mixed
     {
         $config = [
@@ -39,6 +44,9 @@ class ConfigManager
             'payment-method-list' => [
                 'optimistic' => true,
                 'deferred' => true,
+            ],
+            'totals' => [
+                'skeleton' => ['data' => []],
             ],
         ];
         return $config[$name][$key] ?? null;

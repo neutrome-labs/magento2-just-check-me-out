@@ -22,4 +22,13 @@ class Stateful extends Template
     {
         parent::__construct($context, $data);
     }
+
+    public function getCacheLifetime()
+    {
+        if ($this->configManager->isSsr()) {
+            return null;
+        }
+
+        return 24 * 60 * 60;
+    }
 }

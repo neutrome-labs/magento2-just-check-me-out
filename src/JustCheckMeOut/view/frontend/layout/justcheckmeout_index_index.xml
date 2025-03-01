@@ -10,8 +10,7 @@
             </block>
             <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
                    name="justcheckmeout.api"
-                   template="PerspectiveTeam_JustCheckMeOut::api.phtml"
-                   cacheable="false">
+                   template="PerspectiveTeam_JustCheckMeOut::api.phtml">
                 <container name="justcheckmeout.api.after">
                     <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
                            template="PerspectiveTeam_JustCheckMeOut::api/component/customer-email-form.phtml"/>

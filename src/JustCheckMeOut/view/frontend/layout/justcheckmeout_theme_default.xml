@@ -8,8 +8,7 @@
         <referenceContainer name="content">
             <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
                    name="checkout.main"
-                   template="PerspectiveTeam_JustCheckMeOut::main.phtml"
-                   cacheable="false">
+                   template="PerspectiveTeam_JustCheckMeOut::main.phtml">
                 <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.unified-address-form" as="unified-address-form"
                        template="PerspectiveTeam_JustCheckMeOut::component/unified-address-form.phtml"/>

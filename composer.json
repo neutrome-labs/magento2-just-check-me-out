@@ -4,9 +4,10 @@
     "description": "",
     "type": "magento2-module",
     "require": {
+        "neutromelabs/magento2-ssr-graphql": "*",
+        "neutromelabs/magento2-headless-components": "*",
         "magento/framework": "*",
-        "magento/module-checkout": "*",
-        "magento/module-quote-graph-ql": "*"
+        "magento/module-checkout": "*"
     },
     "license": [
         "Proprietary"

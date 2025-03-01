@@ -12,7 +12,8 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 ?>
 
 <div x-data="window.justCheckMeOutApiV1.component.createTotals()"
-     :style="loading ? 'animation: blink 1s linear infinite' : ''">
+     :style="loading ? 'animation: blink 1s linear infinite' : ''"
+     x-show="true" x-collapse>
     <template x-if="subtotal">
         <div style="display: flex; justify-content: space-between">
             <span>Subtotal</span>
@@ -30,5 +31,8 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
             <span>Grand Total</span>
             <strong x-text="grandTotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + grandTotal.currency"></strong>
         </div>
+    </template>
+    <template x-if="!subtotal?.value && taxes?.length < 1 && !grandTotal?.value && loading">
+        <?= $block->headlessComponentRenderer->render('atom/loader') ?>
     </template>
 </div>

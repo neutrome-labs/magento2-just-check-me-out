@@ -44,7 +44,7 @@ GRAPHQL; ?>
 
             totalsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(CART_TOTALS_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('totals', 'skeleton')) ?>,
 
             subtotal: undefined,
             taxes: [],

@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
+use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -44,7 +44,7 @@ GRAPHQL; ?>
 
             totalsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(CART_TOTALS_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('totals', 'skeleton')) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('totals', 'skeleton', true)) ?>,
 
             subtotal: undefined,
             taxes: [],
@@ -72,6 +72,9 @@ GRAPHQL; ?>
 
             init() {
                 this.tryExtractGqlData(this.totalsGql?.data);
+                <?php if (!$block->configManager->isSsr()): ?>
+                this.refresh();
+                <?php endif; ?>
 
                 this.$watch('grandTotal', async (t1, t0) => {
                     if (t1?.value !== t0?.value) {

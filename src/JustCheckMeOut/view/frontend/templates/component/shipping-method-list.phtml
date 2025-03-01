@@ -7,7 +7,7 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 /** @var Stateful $block */
 /** @var Escaper $escaper */
 
-$component = $block->configManager->getComponentConfig('shipping-method-list', 'optimistic')
+$component = $block->configManager->getComponentConfig('shipping_method_list', 'optimistic')
     ? "createOptimisticShippingMethodList"
     : 'createShippingMethodList';
 

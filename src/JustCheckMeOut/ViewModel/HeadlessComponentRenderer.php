@@ -3,9 +3,9 @@
 namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
-use PerspectiveTeam\HeadlessComponents\Service\AttributesHtmlGenerator;
-use PerspectiveTeam\HeadlessComponents\Service\Renderer;
-use PerspectiveTeam\HeadlessComponents\Service\RendererFactory;
+use NeutromeLabs\HeadlessComponents\Service\AttributesHtmlGenerator;
+use NeutromeLabs\HeadlessComponents\Service\Renderer;
+use NeutromeLabs\HeadlessComponents\Service\RendererFactory;
 use PerspectiveTeam\JustCheckMeOut\Service\HeadlessThemeManager;
 
 class HeadlessComponentRenderer implements ArgumentInterface

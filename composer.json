@@ -1,5 +1,5 @@
 {
-    "name": "neutromelabs/module-just-check-me-out",
+    "name": "perspectiveteam/module-just-check-me-out",
     "version": "0.0.0",
     "description": "",
     "type": "magento2-module",
@@ -17,8 +17,8 @@
             "src/JustCheckMeOutWithStripe/registration.php"
         ],
         "psr-4": {
-            "NeutromeLabs\\JustCheckMeOut\\": "src/JustCheckMeOut/",
-            "NeutromeLabs\\JustCheckMeOutWithStripe\\": "src/JustCheckMeOutWithStripe/"
+            "PerspectiveTeam\\JustCheckMeOut\\": "src/JustCheckMeOut/",
+            "PerspectiveTeam\\JustCheckMeOutWithStripe\\": "src/JustCheckMeOutWithStripe/"
         }
     },
     "repositories": {

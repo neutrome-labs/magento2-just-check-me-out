@@ -2,8 +2,8 @@
 
 namespace PerspectiveTeam\JustCheckMeOut\Service;
 
-use PerspectiveTeam\HeadlessComponents\Api\ThemeInterface;
-use PerspectiveTeam\HeadlessComponents\Api\ThemeManagerInterface;
+use NeutromeLabs\HeadlessComponents\Api\ThemeInterface;
+use NeutromeLabs\HeadlessComponents\Api\ThemeManagerInterface;
 use PerspectiveTeam\JustCheckMeOut\Model\Config\Backend\ThemesAvailable;
 
 class HeadlessThemeManager implements ThemeManagerInterface

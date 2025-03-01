@@ -3,6 +3,7 @@
 namespace PerspectiveTeam\JustCheckMeOut\Service;
 
 use Magento\Framework\App\State;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Store\Model\App\Emulation;
 use Magento\Store\Model\StoreManagerInterface;
@@ -14,11 +15,11 @@ class AdditionalViewRenderer
 {
 
     public function __construct(
-        private readonly StoreManagerInterface $storeManager,
         private readonly Emulation $emulation,
         private readonly QuoteViewModel $quoteViewModel,
         private readonly HeadlessComponentRenderer $headlessComponentRenderer,
-        private readonly State $state
+        private readonly State $state,
+        private readonly ObjectManagerInterface $objectManager,
     )
     {
     }
@@ -45,8 +46,7 @@ class AdditionalViewRenderer
                 try {
                     $html = '';
                     $this->state->emulateAreaCode('frontend', function () use (&$html, $class, $template, $data) {
-                        $html = \Magento\Framework\App\ObjectManager::getInstance()
-                            ->create($class)
+                        $html = $this->objectManager->create($class)
                             ->setTemplate($template)
                             ->setData(array_merge([
                                 'area' => 'frontend',

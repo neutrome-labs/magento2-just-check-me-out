@@ -14,7 +14,7 @@ class Index implements HttpGetActionInterface
     public function __construct(
         private readonly ConfigManager $configManager,
         private readonly QuoteViewModel $quoteViewModel,
-        private readonly  RedirectFactory $resultRedirectFactory,
+        private readonly RedirectFactory $resultRedirectFactory,
         private readonly PageFactory $pageFactory
     )
     {
@@ -24,7 +24,7 @@ class Index implements HttpGetActionInterface
     public function execute()
     {
         if (!$this->configManager->isEnabled()) {
-            // return 404;
+            throw new NotFoundException(__('Page not found.'));
         }
 
         if (!$this->quoteViewModel->getQuote() || !$this->quoteViewModel->getQuote()->getItemsCount()){

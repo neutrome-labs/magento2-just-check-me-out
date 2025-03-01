@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
+use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -112,10 +112,14 @@ GRAPHQL; ?>
         }
 
         return {
-            addressBookGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL) ?>,
+            addressBookGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(
+                CUSTOMER_SHIPPING_ADDRESS_BOOK_GQL,
+                [],
+                $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('shipping_address_form', 'book_skeleton', true)
+            ) ?>,
             addressGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(QUOTE_SHIPPING_ADDRESSES_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('shipping_address_form', 'address_skeleton', true)) ?>,
 
             interactive: true,
             autosavePoisonPill: new AbortController(),
@@ -157,7 +161,7 @@ GRAPHQL; ?>
                     lastname: address?.lastname ?? '',
                     telephone: address?.telephone ?? '',
                     country_code: address?.country_code ?? address?.country?.code ?? '<?= '' // todo: get default country from config ?>',
-                    region_id: address?.region?.region_id ?? null,
+                    region_id: address?.region?.region_id?.toString() ?? null,
                     region: address?.region?.region ?? address?.region?.label ?? '',
                     city: address?.city ?? '',
                     postcode: address?.postcode ?? '',

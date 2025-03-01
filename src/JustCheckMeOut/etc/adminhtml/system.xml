@@ -1,0 +1,180 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="neutromelabs" translate="label" sortOrder="999">
+            <label>Neutrome Labs</label>
+        </tab>
+        <section id="neutromelabs_justcheckmeout" sortOrder="10"
+                 showInWebsite="1" showInStore="1" showInDefault="1"
+                 translate="label"
+        >
+            <label>JustCheckMeOut</label>
+            <tab>neutromelabs</tab>
+            <resource>PerspectiveTeam_JustCheckMeOut::admin</resource>
+            <group id="general" sortOrder="10" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>General</label>
+                <field id="enable" type="select" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Enable</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="replace_default" type="select" sortOrder="20"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Replace Default Checkout</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="theme" type="select" sortOrder="30"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Theme</label>
+                    <comment/>
+                    <source_model>PerspectiveTeam\JustCheckMeOut\Model\Config\Backend\ThemesAvailable</source_model>
+                </field>
+                <field id="ssr" type="select" sortOrder="40"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>SSR</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="component_customer_email_form" sortOrder="20" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Customer Email Form</label>
+                <field id="skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+                <field id="can_login" type="select" sortOrder="40"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Enable Login Dropdown Over Email Field</label>
+                    <comment/>
+                    <source_model>PerspectiveTeam\JustCheckMeOut\Model\Config\Backend\ComingSoon</source_model>
+                </field>
+            </group>
+            <group id="shipping_address_form" sortOrder="30" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Shipping Addres Form</label>
+                <field id="address_skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Address Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+                <field id="book_skeleton" type="textarea" sortOrder="20"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Book Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+            </group>
+            <group id="component_shipping_method_list" sortOrder="40" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Component: Shipping Method List</label>
+                <field id="skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+                <field id="optimistic" type="select" sortOrder="20"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Optimistic</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="deferred" type="select" sortOrder="30"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Deferred</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="component_payment_method_list" sortOrder="50" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Component: Payment Method List</label>
+                <field id="skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+                <field id="optimistic" type="select" sortOrder="20"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Optimistic</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="deferred" type="select" sortOrder="30"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Deferred</label>
+                    <comment/>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="component_items" sortOrder="60" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Component: Quote Items</label>
+                <field id="skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+            </group>
+            <group id="component_totals" sortOrder="70" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+                <label>Component: Quote Totals</label>
+                <field id="skeleton" type="textarea" sortOrder="10"
+                       showInWebsite="1" showInStore="1" showInDefault="1"
+                       translate="label"
+                >
+                    <label>Skeleton (FPC Mode)</label>
+                    <comment/>
+                    <depends>
+                        <field id="neutromelabs_justcheckmeout/general/ssr">0</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

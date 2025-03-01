@@ -7,7 +7,7 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 /** @var Stateful $block */
 /** @var Escaper $escaper */
 
-$component = $block->configManager->getComponentConfig('payment-method-list', 'optimistic')
+$component = $block->configManager->getComponentConfig('payment_method_list', 'optimistic')
     ? "createOptimisticPaymentMethodList"
     : 'createPaymentMethodList';
 
@@ -31,21 +31,28 @@ JS;
         'scope' => 'payment-method-list',
     ], 'payment-method-list.messages') ?>
 
-    <?= $block->headlessComponentRenderer->render('block/radio-list-with-collapsible-view', [
-        'key' => uniqid('payment_method_'),
-        'empty' => __('No payment method'),
-        'props' => <<<JS
-({
-    items: radioItems(),
-    selected: selectedMethod
-})
-JS,
-        'wrapper' => [
-            'x-effect' => 'items = radioItems(); disabled = !interactive',
-            'x-model' => 'uiSelectedMethod',
-        ],
-        'item' => [
-            'x-effect' => 'sharedViewHtml = selectedMethodViewHtml',
-        ],
-    ], 'payment-method-list.items') ?>
+    <template x-if="!methodsAvailable || methodsAvailable.length === 0">
+        <div style="display: flex; align-items: center; justify-content: center">
+            <span><?= __('No payment methods available') ?></span>
+        </div>
+    </template>
+    <template x-if="methodsAvailable?.length > 0">
+        <?= $block->headlessComponentRenderer->render('block/radio-list-with-collapsible-view', [
+            'key' => uniqid('payment_method_'),
+            'empty' => __('No payment method'),
+            'props' => <<<JS
+    ({
+        items: radioItems(),
+        selected: selectedMethod
+    })
+    JS,
+            'wrapper' => [
+                'x-effect' => 'items = radioItems(); disabled = !interactive',
+                'x-model' => 'uiSelectedMethod',
+            ],
+            'item' => [
+                'x-effect' => 'sharedViewHtml = selectedMethodViewHtml',
+            ],
+        ], 'payment-method-list.items') ?>
+    </template>
 </form>

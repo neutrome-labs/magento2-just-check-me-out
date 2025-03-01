@@ -20,8 +20,10 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
             <strong><?=  $item->getName() ?></strong>
             <span class="small"><?= $item->getSku() ?></span>
         </div>
-        <span><?= number_format(floatval($item->getPrice()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
+        <div style="display: flex; flex-direction: column">
+            <span class="small"><?= $item->getQty() ?> X <?= number_format(floatval($item->getPrice()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
+            <span><?= number_format(floatval($item->getRowTotal()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
+        </div>
     </div>
-
 </div>
 <?php endforeach; ?>

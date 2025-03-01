@@ -7,7 +7,7 @@
     </type>
 
     <virtualType name="PerspectiveTeam\JustCheckMeOut\Virtual\Theme\Default"
-                 type="PerspectiveTeam\HeadlessComponents\Model\Theme">
+                 type="NeutromeLabs\HeadlessComponents\Model\Theme">
         <arguments>
             <argument name="data" xsi:type="array">
                 <item name="slug" xsi:type="string">default</item>

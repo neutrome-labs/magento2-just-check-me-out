@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
+use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -40,7 +40,7 @@ GRAPHQL; ?>
         return {
             interactive: true,
             init() {
-                this.$watch('emailGqlWrapper', () => {
+                this.$watch('emailGql', () => {
                     this.displayEmail = this.cartEmail() || this.customerEmail();
                 });
 
@@ -56,9 +56,9 @@ GRAPHQL; ?>
                     };
                 });
             },
-            emailGqlWrapper: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(UNIFIED_EMAIL_GQL, [
+            emailGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(UNIFIED_EMAIL_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('customer_email_form', 'skeleton', true)) ?>,
             displayEmail: <?php
             $email = $block->quoteViewModel->getQuote()->getCustomerEmail()
                 ?? $block->quoteViewModel->getQuote()->getShippingAddress()->getEmail();
@@ -66,10 +66,10 @@ GRAPHQL; ?>
             ?>,
             displayPassword: '',
             cartEmail() {
-                return this.emailGqlWrapper?.data?.cart?.email ?? '';
+                return this.emailGql?.data?.cart?.email ?? '';
             },
             customerEmail() {
-                return this.emailGqlWrapper?.data?.customer?.email ?? '';
+                return this.emailGql?.data?.customer?.email ?? '';
             },
             customerIsLoggedIn() {
                 return !!this.customerEmail();

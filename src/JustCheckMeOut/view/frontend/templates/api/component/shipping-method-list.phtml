@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
+use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -45,10 +45,10 @@ GRAPHQL; ?>
         }
 
         return {
-            <?php if(!$block->configManager->getComponentConfig('shipping-method-list', 'optimistic')): ?>
+            <?php if(!$block->configManager->getComponentConfig('shipping_method_list', 'optimistic')): ?>
             methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(SHIPPING_METHODS_LIST_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('shipping_method_list', 'skeleton', true)) ?>,
             <?php endif; ?>
 
             interactive: true,
@@ -97,6 +97,17 @@ GRAPHQL; ?>
                     }
                 }
             },
+            async tryRefreshEntireList(abort = undefined) {
+                try {
+                    this.interactive = false;
+
+                    await this.methodsGql.refresh({}, {signal: abort?.signal});
+                    this.tryExtractGqlData(this.methodsGql?.data);
+                    this.tryExtractGqlErrors(this.methodsGql?.errors);
+                } finally {
+                    this.interactive = true;
+                }
+            },
 
             canPlaceOrder() {
                 return this.selectedMethod?.length > 0;
@@ -122,16 +133,14 @@ GRAPHQL; ?>
 
                 for (const e of props.refreshEvents) {
                     window.justCheckMeOutApiV1.bus.on(e, async (_, abort) => {
-                        try {
-                            this.interactive = false;
-
-                            await this.methodsGql.refresh({}, {signal: abort?.signal});
-                            this.tryExtractGqlData(this.methodsGql?.data);
-                            this.tryExtractGqlErrors(this.methodsGql?.errors);
-                        } finally {
-                            this.interactive = true;
-                        }
+                        await this.tryRefreshEntireList(abort)
                     });
+                }
+
+                if (this.methodsGql?.ssr?.response?.config) {
+                    if (this.methodsGql.ssr.response.config.refresh) {
+                        this.tryRefreshEntireList();
+                    }
                 }
             },
 
@@ -198,10 +207,10 @@ GRAPHQL; ?>
         };
     }
 
-    <?php if($block->configManager->getComponentConfig('shipping-method-list', 'optimistic')): ?>
+    <?php if($block->configManager->getComponentConfig('shipping_method_list', 'optimistic')): ?>
     window.justCheckMeOutApiV1.component.createOptimisticShippingMethodList = function (props = {
         refreshEvents: ['state.set.customer', 'state.set.shipping-address'],
-        deferred: <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>,
+        deferred: <?= $block->configManager->getComponentConfig('shipping_method_list', 'deferred') ? 'true' : 'false' ?>,
     }) {
          <?php $OPTIMISTIC_SHIPPING_METHODS_LIST_GQL = <<<GRAPHQL
 query shippingMethodsAvailable(\$cart_id: String!) {
@@ -232,7 +241,7 @@ GRAPHQL; ?>
 
             methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall($OPTIMISTIC_SHIPPING_METHODS_LIST_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('shipping_method_list', 'skeleton', true)) ?>,
 
             updateViewHtml: function() {
                 this.selectedMethodViewHtml = this.methodsAvailable
@@ -245,7 +254,7 @@ GRAPHQL; ?>
                     currentViews[v.carrier_code + '_' + v.method_code] = v.justcheckmeout_view_html;
                 }
 
-                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>);
+                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping_method_list', 'deferred') ? 'true' : 'false' ?>);
 
                 for (const v of this.methodsAvailable) {
                     if (
@@ -263,7 +272,7 @@ GRAPHQL; ?>
 
             init() {
                 realistic.init.bind(this)();
-                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping_method_list', 'deferred') ? 'true' : 'false' ?>) {
                     window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('deferred-shipping-method', 210, async (_, final) => {
                         if (final) {
                             await realistic.selectMethod.bind(this)(this.selectedMethod);
@@ -279,7 +288,7 @@ GRAPHQL; ?>
                 this.selectedMethod = code;
                 this.updateViewHtml();
 
-                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('shipping_method_list', 'deferred') ? 'true' : 'false' ?>) {
                     await window.justCheckMeOutApiV1.bus.fire('state.set.shipping-method', this.selectedMethod);
                     await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
                 } else {

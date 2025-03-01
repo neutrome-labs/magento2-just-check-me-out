@@ -5,7 +5,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
-use PerspectiveTeam\SsrGraphql\ViewModel\SsrGraphqlViewModel;
+use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 /** @var Stateful $block */
 /** @var Escaper $escaper */
@@ -61,10 +61,10 @@ GRAPHQL;
         ?>
 
         return {
-            <?php if (!$block->configManager->getComponentConfig('payment-method-list', 'optimistic')): ?>
+            <?php if (!$block->configManager->getComponentConfig('payment_method_list', 'optimistic')): ?>
             methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall(PAYMENT_METHODS_LIST_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('payment_method_list', 'skeleton', true)) ?>,
             <?php endif; ?>
 
             interactive: true,
@@ -75,7 +75,7 @@ GRAPHQL;
             selectedMethodViewHtml: undefined,
 
             tryExtractGqlData(data, skipSelected = false) {
-                this.methodsAvailable = data?.cart?.available_payment_methods;
+                this.methodsAvailable = data?.cart?.available_payment_methods ?? [];
                 const newMethodCode = data?.cart?.selected_payment_method?.code;
                 if (!skipSelected) {
                     if (this.selectedMethod !== newMethodCode) {
@@ -93,6 +93,17 @@ GRAPHQL;
                             text: e.message,
                         });
                     }
+                }
+            },
+            async tryRefreshEntireList(abort = undefined) {
+                try {
+                    this.interactive = false;
+
+                    await this.methodsGql.refresh({}, {signal: abort?.signal});
+                    this.tryExtractGqlData(this.methodsGql?.data);
+                    this.tryExtractGqlErrors(this.methodsGql?.errors);
+                } finally {
+                    this.interactive = true;
                 }
             },
 
@@ -120,16 +131,14 @@ GRAPHQL;
 
                 for (const e of props.refreshEvents) {
                     window.justCheckMeOutApiV1.bus.on(e, async (_, abort) => {
-                        try {
-                            this.interactive = false;
-
-                            await this.methodsGql.refresh({}, {signal: abort?.signal});
-                            this.tryExtractGqlData(this.methodsGql?.data);
-                            this.tryExtractGqlErrors(this.methodsGql?.errors);
-                        } finally {
-                            this.interactive = true;
-                        }
+                        await this.tryRefreshEntireList(abort);
                     });
+                }
+
+                if (this.methodsGql?.ssr?.response?.config) {
+                    if (this.methodsGql.ssr.response.config.refresh) {
+                        this.tryRefreshEntireList();
+                    }
                 }
             },
 
@@ -165,10 +174,10 @@ GRAPHQL;
         };
     }
 
-    <?php if ($block->configManager->getComponentConfig('payment-method-list', 'optimistic')): ?>
+    <?php if ($block->configManager->getComponentConfig('payment_method_list', 'optimistic')): ?>
     window.justCheckMeOutApiV1.component.createOptimisticPaymentMethodList = function (props = {
         refreshEvents: ['state.set.customer', 'state.set.shipping-address', 'state.set.shipping-method'],
-        deferred: <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>,
+        deferred: <?= $block->configManager->getComponentConfig('payment_method_list', 'deferred') ? 'true' : 'false' ?>,
     }) {
         <?php $OPTIMISTIC_PAYMENT_METHODS_LIST_GQL = <<<GRAPHQL
 query paymentMethodsAvailable(\$cart_id: String!) {
@@ -191,7 +200,7 @@ GRAPHQL; ?>
 
             methodsGql: <?= $block->ssrGraphqlViewModel->makeSsrGqlCall($OPTIMISTIC_PAYMENT_METHODS_LIST_GQL, [
                 'cart_id' => $block->quoteViewModel->getMaskedQuoteId(),
-            ]) ?>,
+            ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('payment_method_list', 'skeleton', true)) ?>,
 
             updateViewHtml: function (code) {
                 this.selectedMethodViewHtml = this.methodsAvailable
@@ -204,7 +213,7 @@ GRAPHQL; ?>
                     currentViews[v.code] = v.justcheckmeout_view_html;
                 }
 
-                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>);
+                realistic.tryExtractGqlData.bind(this)(data, props?.deferred ?? <?= $block->configManager->getComponentConfig('payment_method_list', 'deferred') ? 'true' : 'false' ?>);
 
                 for (const v of this.methodsAvailable) {
                     if (data?.setPaymentMethodOnCart?.cart?.selected_payment_method?.code === v.code) {
@@ -219,7 +228,7 @@ GRAPHQL; ?>
 
             init() {
                 realistic.init.bind(this)();
-                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment_method_list', 'deferred') ? 'true' : 'false' ?>) {
                     window.justCheckMeOutApiV1.globals.registerPlaceOrderGuard('deferred-payment-method', 310, async (_, final) => {
                         if (final) {
                             await realistic.selectMethod.bind(this)(this.selectedMethod);
@@ -235,7 +244,7 @@ GRAPHQL; ?>
                 this.updateViewHtml(code);
                 this.selectedMethod = code;
 
-                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment-method-list', 'deferred') ? 'true' : 'false' ?>) {
+                if (props?.deferred ?? <?= $block->configManager->getComponentConfig('payment_method_list', 'deferred') ? 'true' : 'false' ?>) {
                     await window.justCheckMeOutApiV1.bus.fire('state.set.payment-method', {
                         code: this.selectedMethod,
                         deferred: true,

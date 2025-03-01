@@ -3,8 +3,8 @@
 namespace PerspectiveTeam\JustCheckMeOut\Model\Config\Backend;
 
 use Magento\Framework\Data\OptionSourceInterface;
-use PerspectiveTeam\HeadlessComponents\Api\ThemeInterface;
-use PerspectiveTeam\HeadlessComponents\Model\Theme;
+use NeutromeLabs\HeadlessComponents\Api\ThemeInterface;
+use NeutromeLabs\HeadlessComponents\Model\Theme;
 
 class ThemesAvailable implements OptionSourceInterface
 {

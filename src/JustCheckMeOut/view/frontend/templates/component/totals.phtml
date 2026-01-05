@@ -11,28 +11,50 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 /** @var Escaper $escaper */
 ?>
 
-<div x-data="window.justCheckMeOutApiV1.component.createTotals()"
-     :style="loading ? 'animation: blink 1s linear infinite' : ''"
-     x-show="true" x-collapse>
-    <template x-if="subtotal">
-        <div style="display: flex; justify-content: space-between">
-            <span>Subtotal</span>
-            <strong x-text="subtotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + subtotal.currency"></strong>
-        </div>
-    </template>
-    <template x-for="tax in taxes">
-        <div style="display: flex; justify-content: space-between">
-            <span x-text="tax.label"></span>
-            <strong x-text="tax.amount.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + tax.amount.currency"></strong>
-        </div>
-    </template>
-    <template x-if="grandTotal">
-        <div style="display: flex; justify-content: space-between">
-            <span>Grand Total</span>
-            <strong x-text="grandTotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + grandTotal.currency"></strong>
-        </div>
-    </template>
+<div class="justcheckmeout__totals"
+     x-data="window.justCheckMeOutApiV1.component.createTotals()"
+     :class="{'loading': loading}">
+    <table class="table-totals">
+        <tbody>
+            <template x-if="subtotal">
+                <tr class="totals sub">
+                    <th class="mark" scope="row"><?= __('Subtotal') ?></th>
+                    <td class="amount">
+                        <span class="price" x-text="subtotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + subtotal.currency"></span>
+                    </td>
+                </tr>
+            </template>
+            <template x-if="shipping">
+                <tr class="totals shipping">
+                    <th class="mark" scope="row"><?= __('Shipping') ?></th>
+                    <td class="amount">
+                        <span class="price" x-text="shipping.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + shipping.currency"></span>
+                    </td>
+                </tr>
+            </template>
+            <template x-for="tax in taxes" :key="tax.label">
+                <tr class="totals tax">
+                    <th class="mark" scope="row" x-text="tax.label"></th>
+                    <td class="amount">
+                        <span class="price" x-text="tax.amount.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + tax.amount.currency"></span>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+        <tfoot>
+            <template x-if="grandTotal">
+                <tr class="totals grand">
+                    <th class="mark" scope="row"><?= __('Grand Total') ?></th>
+                    <td class="amount">
+                        <strong class="price" x-text="grandTotal.value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' ' + grandTotal.currency"></strong>
+                    </td>
+                </tr>
+            </template>
+        </tfoot>
+    </table>
     <template x-if="!subtotal?.value && taxes?.length < 1 && !grandTotal?.value && loading">
-        <?= $block->headlessComponentRenderer->render('atom/loader') ?>
+        <div class="totals-loader">
+            <?= $block->headlessComponentRenderer->render('atom/loader') ?>
+        </div>
     </template>
 </div>

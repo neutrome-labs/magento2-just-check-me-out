@@ -42,7 +42,7 @@
                        showInWebsite="1" showInStore="1" showInDefault="1"
                        translate="label comment"
                 >
-                    <label>Load AlpineJS Core</label>
+                    <label>Load AlpineJS</label>
                     <comment>Disable if your theme already includes AlpineJS (e.g., Hyva). Plugins (collapse, tooltip) will still be loaded.</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>

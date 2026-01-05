@@ -8,23 +8,37 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 /** @var Escaper $escaper */
 
 $mediaUrl = $block->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
+$items = $block->quoteViewModel->getQuote()->getAllVisibleItems();
+$itemCount = count($items);
+$currencyCode = $block->quoteViewModel->getQuote()->getQuoteCurrencyCode();
 ?>
 
-<?php foreach ($block->quoteViewModel->getQuote()->getAllVisibleItems() as $item): ?>
-<div style="display: flex; gap: 10px;">
-    <img src="<?= $escaper->escapeUrl($mediaUrl . 'catalog/product' . $item->getProduct()->getThumbnail()) ?>"
-         style="width: 64px;"
-         alt="<?= $item->getName() ?>"
-         loading="lazy">
-    <div style="display: flex; flex-direction: column; justify-content: space-between">
-        <div style="display: flex; flex-direction: column;">
-            <strong><?=  $item->getName() ?></strong>
-            <span class="small"><?= $item->getSku() ?></span>
+<div class="justcheckmeout__items">
+    <div class="justcheckmeout__items-header">
+        <span class="title"><?= __('Order Summary') ?></span>
+        <span class="count"><?= $itemCount ?> <?= $itemCount === 1 ? __('item') : __('items') ?></span>
+    </div>
+    
+    <div class="justcheckmeout__items-list">
+        <?php foreach ($items as $item): ?>
+        <div class="justcheckmeout__item">
+            <div class="justcheckmeout__item-image">
+                <img src="<?= $escaper->escapeUrl($mediaUrl . 'catalog/product' . $item->getProduct()->getThumbnail()) ?>"
+                     alt="<?= $escaper->escapeHtmlAttr($item->getName()) ?>"
+                     loading="lazy">
+            </div>
+            <div class="justcheckmeout__item-details">
+                <strong class="justcheckmeout__item-name"><?= $escaper->escapeHtml($item->getName()) ?></strong>
+                <div class="justcheckmeout__item-sku"><?= $escaper->escapeHtml($item->getSku()) ?></div>
+                <div class="justcheckmeout__item-pricing">
+                    <span class="justcheckmeout__item-qty"><?= (int)$item->getQty() ?> &times;</span>
+                    <span class="justcheckmeout__item-price"><?= number_format((float)$item->getPrice(), 2) ?> <?= $currencyCode ?></span>
+                </div>
+                <div class="justcheckmeout__item-subtotal">
+                    <span><?= number_format((float)$item->getRowTotal(), 2) ?> <?= $currencyCode ?></span>
+                </div>
+            </div>
         </div>
-        <div style="display: flex; flex-direction: column">
-            <span class="small"><?= $item->getQty() ?> X <?= number_format(floatval($item->getPrice()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
-            <span><?= number_format(floatval($item->getRowTotal()), 2) ?> <?= $block->quoteViewModel->getQuote()->getQuoteCurrencyCode() ?></span>
-        </div>
+        <?php endforeach; ?>
     </div>
 </div>
-<?php endforeach; ?>

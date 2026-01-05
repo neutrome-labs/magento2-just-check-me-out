@@ -7,11 +7,12 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 /** @var Stateful $block */
 /** @var Escaper $escaper */
 
+$mediaUrl = $block->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
 ?>
 
 <?php foreach ($block->quoteViewModel->getQuote()->getAllVisibleItems() as $item): ?>
 <div style="display: flex; gap: 10px;">
-    <img src="https://app.demo-just-check-me-out.test/media/catalog/product/<?= $item->getProduct()->getImage() ?>"
+    <img src="<?= $escaper->escapeUrl($mediaUrl . 'catalog/product' . $item->getProduct()->getThumbnail()) ?>"
          style="width: 64px;"
          alt="<?= $item->getName() ?>"
          loading="lazy">

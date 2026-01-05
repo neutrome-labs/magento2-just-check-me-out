@@ -32,10 +32,6 @@ class Index implements HttpGetActionInterface
         }
 
         $page = $this->pageFactory->create();
-        $page->getLayout()->getUpdate();
-
-        $theme = $this->configManager->getTheme();
-        $page->getLayout()->getUpdate()->addHandle("justcheckmeout_theme_$theme");
 
         return $page;
     }

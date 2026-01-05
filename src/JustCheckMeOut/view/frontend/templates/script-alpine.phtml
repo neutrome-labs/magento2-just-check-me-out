@@ -3,10 +3,16 @@ declare(strict_types=1);
 
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use PerspectiveTeam\JustCheckMeOut\Service\ConfigManager;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
+/** @var ConfigManager $configManager */
+$configManager = $block->getData('configManager');
 
+if (!$configManager->shouldLoadAlpine()) {
+    return;
+}
 ?>
 
 <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>

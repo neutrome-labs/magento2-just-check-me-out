@@ -23,6 +23,11 @@ class Stateful extends Template
         parent::__construct($context, $data);
     }
 
+    public function getStore(): \Magento\Store\Api\Data\StoreInterface
+    {
+        return $this->_storeManager->getStore();
+    }
+
     public function getCacheLifetime()
     {
         if ($this->configManager->isSsr()) {

@@ -1,0 +1,90 @@
+<?php
+/**
+ * Alpine.js Tooltip Plugin for Hyva Theme
+ * Based on @ryangjchandler/alpine-tooltip with tippy.js
+ * @see https://github.com/ryangjchandler/alpine-tooltip
+ */
+
+declare(strict_types=1);
+
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\Escaper;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+?>
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script>
+    (() => {
+        function src_default(Alpine) {
+            Alpine.magic('tooltip', (el) => (message, options = {}) => {
+                let instance = tippy(el, {
+                    content: message,
+                    trigger: 'manual',
+                    ...options
+                });
+                instance.show();
+                setTimeout(() => {
+                    instance.hide();
+                    setTimeout(() => instance.destroy(), options.duration || 300);
+                }, options.timeout || 2000);
+            });
+
+            Alpine.directive('tooltip', (el, { modifiers, expression }, { evaluateLater, effect }) => {
+                let config = getConfig(modifiers);
+                let instance = null;
+
+                let getContent = evaluateLater(expression);
+
+                effect(() => {
+                    getContent((content) => {
+                        if (!instance) {
+                            instance = tippy(el, {
+                                content,
+                                ...config
+                            });
+                            return;
+                        }
+                        instance.setContent(content);
+                    });
+                });
+            });
+        }
+
+        function getConfig(modifiers) {
+            let config = {
+                placement: 'top',
+                trigger: 'mouseenter focus'
+            };
+
+            if (modifiers.includes('right')) config.placement = 'right';
+            if (modifiers.includes('bottom')) config.placement = 'bottom';
+            if (modifiers.includes('left')) config.placement = 'left';
+            if (modifiers.includes('click')) config.trigger = 'click';
+            if (modifiers.includes('focus')) config.trigger = 'focus';
+            if (modifiers.includes('manual')) config.trigger = 'manual';
+
+            const durationIndex = modifiers.indexOf('duration');
+            if (durationIndex !== -1 && modifiers[durationIndex + 1]) {
+                config.duration = parseInt(modifiers[durationIndex + 1]);
+            }
+
+            const delayIndex = modifiers.indexOf('delay');
+            if (delayIndex !== -1 && modifiers[delayIndex + 1]) {
+                config.delay = parseInt(modifiers[delayIndex + 1]);
+            }
+
+            if (modifiers.includes('interactive')) config.interactive = true;
+            if (modifiers.includes('html')) config.allowHTML = true;
+
+            return config;
+        }
+
+        document.addEventListener('alpine:init', () => {
+            window.Alpine.plugin(src_default);
+        });
+    })();
+    //# sourceURL=alpine-tooltip.js
+</script>

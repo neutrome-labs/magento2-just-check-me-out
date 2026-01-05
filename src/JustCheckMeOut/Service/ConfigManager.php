@@ -52,4 +52,20 @@ class ConfigManager implements ArgumentInterface
         $v = $this->get("component_$name/$key");
         return $unserialize && !!$v ? $this->serializer->unserialize($v) : $v;
     }
+
+    /**
+     * Get allowed countries from store configuration (general/country/allow)
+     *
+     * @return string[]
+     */
+    public function getAllowedCountries(): array
+    {
+        $allowed = $this->scopeConfig->getValue(
+            'general/country/allow',
+            'store',
+            $this->storeManager->getStore()->getId()
+        );
+
+        return $allowed ? array_filter(explode(',', $allowed)) : [];
+    }
 }

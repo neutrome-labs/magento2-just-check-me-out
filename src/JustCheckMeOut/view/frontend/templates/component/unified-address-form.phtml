@@ -9,6 +9,8 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 
 
 $address = $block->quoteViewModel->getQuote()->getShippingAddress();
+$allowedCountries = $block->configManager->getAllowedCountries();
+$allowedCountriesJson = json_encode($allowedCountries);
 
 $constructorId = uniqid();
 $formId = uniqid('unified-address-form_');
@@ -116,9 +118,16 @@ GRAPHQL;
 
             $countryRegionWrapperXData = <<<JS
 ({
+    allowedCountries: {$allowedCountriesJson},
     countriesGql: {$block->ssrGraphqlViewModel->makeSsrGqlCall(COUNTRIES_GQL)},
     managedRegions: null,
+    regionsLoading: false,
     init() {
+        // Preselect country if only one is allowed and none is set
+        if (!formData.country_code && this.allowedCountries.length === 1) {
+            formData.country_code = this.allowedCountries[0];
+        }
+
         this.\$watch('formData.country_code', async (value) => {
             const country = Alpine.\$data(\$el.querySelector(`[x-ref=country_code]`)).options.find(x => x.id === value);
             this.managedRegions = country?.regions && country.regions.length > 0 ? country.regions : null;
@@ -132,12 +141,12 @@ JS; ?>
                 <?= $block->headlessComponentRenderer->render('atom/input-select', [
                     'props' => <<<JS
 ({
-    options: countriesGql?.data?.countries?.map(x => {
-            return {
-                id: x.id,
-                label: x.full_name_locale,
-            };
-        }) ?? [],
+    options: countriesGql?.data?.countries
+        ?.filter(x => allowedCountries.length === 0 || allowedCountries.includes(x.id))
+        ?.map(x => ({
+            id: x.id,
+            label: x.full_name_locale,
+        })) ?? [],
     selected: formData.country_code,
 })
 JS,
@@ -147,8 +156,10 @@ JS,
                         'x-ref' => 'country_code',
                         'x-effect' => <<<JS
 await (async () => {
-    const r = await window.fetchMagento2Gql(
-        `query getRegions(\$country_id: String!) {
+    regionsLoading = true;
+    try {
+        const r = await window.fetchMagento2Gql(
+            `query getRegions(\$country_id: String!) {
   country(id: \$country_id) {
     available_regions {
       id
@@ -157,13 +168,16 @@ await (async () => {
     }
   }
 }`, {'country_id': formData.country_code});
-    managedRegions = r?.data?.country?.available_regions?.map(r => {
-        return {
-            id: r.id,
-            label: r.name,
-            code: r.code
-        };
-    }) ?? null;
+        managedRegions = r?.data?.country?.available_regions?.map(r => {
+            return {
+                id: r.id,
+                label: r.name,
+                code: r.code
+            };
+        }) ?? null;
+    } finally {
+        regionsLoading = false;
+    }
 })()
 JS,
                     ],
@@ -205,6 +219,7 @@ JS,
                         'required' => 1,
                         'value' => $address->getRegion(),
                         'x-model' => 'formData.region',
+                        ':disabled' => 'regionsLoading',
                         'x-effect' => 'state = focusedFieldKey != "region" && formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
                         '@focusin' => 'focusedFieldKey = "region"',
                         '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("region", "touched", true); setFieldMetaData("region", "valid", true)',

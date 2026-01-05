@@ -10,13 +10,13 @@ use PerspectiveTeam\JustCheckMeOut\Block\Stateful;
 ?>
 
 <div class="justcheckmeout__container">
-    <div style="display: flex; flex-direction: column; gap: 10px;">
+    <div class="justcheckmeout__main">
         <?= $block->getChildHtml('unified-address-form') ?>
         <?= $block->getChildHtml('shipping-method-list') ?>
     </div>
-    <div style="background: #eee; border-radius: 3px; padding: 10px 15px; display: flex; flex-direction: column; gap: 20px;">
+    <div class="justcheckmeout__sidebar">
         <?= $block->getChildHtml('items') ?>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="justcheckmeout__sidebar-checkout">
             <?= $block->getChildHtml('totals') ?>
             <?= $block->getChildHtml('payment-method-list') ?>
         </div>

@@ -1,14 +1,45 @@
 .justcheckmeout__container {
     display: grid;
-    grid-column-gap: 10px;
+    grid-column-gap: 30px;
     grid-row-gap: 20px;
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 20px;
 }
-@media screen and (min-width:961px) {
+
+@media screen and (min-width: 961px) {
     .justcheckmeout__container {
-        grid-template-columns: 4fr 3fr;
+        grid-template-columns: 1fr 400px;
+        align-items: start;
     }
+}
+
+.justcheckmeout__main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.justcheckmeout__sidebar {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media screen and (min-width: 961px) {
+    .justcheckmeout__sidebar {
+        position: sticky;
+        top: 20px;
+    }
+}
+
+.justcheckmeout__sidebar-checkout {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .justcheckmeout__unified_address_form__fieldset_row {
@@ -20,6 +51,17 @@
 
 .justcheckmeout__unified_address_form__fieldset_row > * {
     flex: 1;
+    min-width: 0;
+}
+
+.justcheckmeout__unified_address_form__fieldset_row .control {
+    width: 100%;
+}
+
+.justcheckmeout__unified_address_form__fieldset_row select,
+.justcheckmeout__unified_address_form__fieldset_row input {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .field.required label.label:after {

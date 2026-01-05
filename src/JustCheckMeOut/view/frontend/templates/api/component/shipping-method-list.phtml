@@ -145,9 +145,9 @@ GRAPHQL; ?>
             },
 
             async setShippingMethodOnCart(variables) {
-                return await window.fetchMagento2Gql(`mutation setShippingMethod($card_id: String!, $carrier: String!, $method: String!){
+                return await window.fetchMagento2Gql(`mutation setShippingMethod($cart_id: String!, $carrier: String!, $method: String!){
   setShippingMethodsOnCart(input: {
-    cart_id: $card_id,
+    cart_id: $cart_id,
     shipping_methods: [{
       carrier_code: $carrier,
       method_code: $method
@@ -186,7 +186,7 @@ GRAPHQL; ?>
 
                     const [carrier, method] = code.split('_');
                     const r = await this.setShippingMethodOnCart({
-                        card_id: window.justCheckMeOutApiV1.globals.cartId(),
+                        cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                         carrier,
                         method,
                     });

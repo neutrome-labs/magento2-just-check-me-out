@@ -38,9 +38,9 @@ query paymentMethodsAvailable(\$cart_id: String!) {
 GRAPHQL;
 
         const SET_PAYMENT_METHOD_GQL = <<<GRAPHQL
-mutation setPaymentMethod(\$card_id: String!, \$code: String!){
+mutation setPaymentMethod(\$cart_id: String!, \$code: String!){
   setPaymentMethodOnCart(input: {
-    cart_id: \$card_id,
+    cart_id: \$cart_id,
     payment_method: {
       code: \$code
     }
@@ -152,7 +152,7 @@ GRAPHQL;
                     await window.justCheckMeOutApiV1.bus.fire('place-order.call-the-guards');
 
                     const r = await window.fetchMagento2Gql(`<?= SET_PAYMENT_METHOD_GQL ?>`, {
-                        card_id: window.justCheckMeOutApiV1.globals.cartId(),
+                        cart_id: window.justCheckMeOutApiV1.globals.cartId(),
                         code,
                     });
 

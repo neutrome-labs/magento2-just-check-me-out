@@ -27,6 +27,12 @@ JS;
 ?>
 
 <form action="#" x-data="<?= $escaper->escapeHtmlAttr($component) ?>">
+    <div class="step-title" style="display: flex; align-items: center; gap: 10px; font-size: 2rem; padding-bottom: 10px">
+        <span><?= __('Payment Method') ?></span>
+        <template x-if="!interactive">
+            <?= $block->headlessComponentRenderer->render('atom/loader') ?>
+        </template>
+    </div>
     <?= $block->headlessComponentRenderer->render('block/messages', [
         'scope' => 'payment-method-list',
     ], 'payment-method-list.messages') ?>

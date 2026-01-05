@@ -46,7 +46,7 @@ GRAPHQL;
             guardsHintHtml() {
                 const visibleErrors = this.guardsState.filter(x => x.state !== 'ok' && !!x.message);
                 if (visibleErrors.length === 0) {
-                    return '';
+                    return '<?= __('Ready to go!') ?>';
                 }
 
                 return '<div style="display: flex; flex-direction: column; gap: 2px">'

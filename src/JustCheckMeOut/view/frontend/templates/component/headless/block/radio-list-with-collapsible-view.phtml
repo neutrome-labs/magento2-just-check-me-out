@@ -38,7 +38,7 @@ $component .= '(' . $block->getData('props') . ')';
 >
     <template x-for="item in items" :key="item.id">
         <div class="justcheckmeout__headless_radio_list__item"
-             :style="selected === item.id && 'border-color: blue'"
+             :style="selected === item.id && 'border-color: #1979c3'"
              @click="if (!disabled) selected = item.id"
             <?= $itemAttributesHtml ?>
         >

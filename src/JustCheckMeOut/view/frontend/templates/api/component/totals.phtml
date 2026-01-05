@@ -35,6 +35,14 @@ query totals(\$cart_id: String!) {
         value
       }
     }
+    shipping_addresses {
+      selected_shipping_method {
+        amount {
+          currency
+          value
+        }
+      }
+    }
   }
 }
 GRAPHQL; ?>
@@ -47,6 +55,7 @@ GRAPHQL; ?>
             ], $block->configManager->isSsr() ? null : $block->configManager->getComponentConfig('totals', 'skeleton', true)) ?>,
 
             subtotal: undefined,
+            shipping: undefined,
             taxes: [],
             grandTotal: undefined,
 
@@ -55,6 +64,11 @@ GRAPHQL; ?>
                     this.subtotal = data.cart.prices.subtotal_excluding_tax;
                     this.taxes = data.cart.prices.applied_taxes;
                     this.grandTotal = data.cart.prices.grand_total;
+                }
+                if (data?.cart?.shipping_addresses?.[0]?.selected_shipping_method?.amount) {
+                    this.shipping = data.cart.shipping_addresses[0].selected_shipping_method.amount;
+                } else {
+                    this.shipping = undefined;
                 }
             },
 

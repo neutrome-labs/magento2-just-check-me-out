@@ -4,6 +4,7 @@ namespace NeutromeLabs\JustCheckMeOut\Block;
 
 use Magento\Framework\View\Element\Template;
 use NeutromeLabs\JustCheckMeOut\Service\ConfigManager;
+use NeutromeLabs\JustCheckMeOut\ViewModel\AddressConfigProvider;
 use NeutromeLabs\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
 use NeutromeLabs\JustCheckMeOut\ViewModel\QuoteViewModel;
 use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
@@ -16,6 +17,7 @@ class Stateful extends Template
         public readonly QuoteViewModel $quoteViewModel,
         public readonly SsrGraphqlViewModel $ssrGraphqlViewModel,
         public readonly HeadlessComponentRenderer $headlessComponentRenderer,
+        public readonly AddressConfigProvider $addressConfigProvider,
         Template\Context $context,
         array $data = []
     )

@@ -58,6 +58,7 @@ src/JustCheckMeOutWithStripe/
 | `Service/ShippingMethodAdditionalViewRegistry.php` | Registry for shipping method additional views |
 | `ViewModel/QuoteViewModel.php` | Quote and masked quote ID accessor |
 | `ViewModel/HeadlessComponentRenderer.php` | Wrapper for headless component rendering |
+| `ViewModel/AddressConfigProvider.php` | Exposes Magento address field configs (street lines, optional postcode, required region, etc.) |
 | `view/frontend/templates/api.phtml` | JavaScript API (`window.justCheckMeOutApiV1`) |
 | `view/frontend/layout/justcheckmeout_index_index.xml` | Main checkout page layout |
 
@@ -164,6 +165,7 @@ Add script blocks to `justcheckmeout.api.after` container in layout XML.
 4. **Event bus** callbacks are awaited sequentially, supporting async operations
 5. **Headless component templates** are prefixed with `component/headless/` automatically by `HeadlessComponentRenderer`
 6. **Script companion templates** (for AlpineJS) are rendered to `justcheckmeout.api.after` container
+7. **Address form fields** respect Magento configuration: street lines count (`customer/address/street_lines`), optional postcode countries (`general/country/optional_zip_countries`), required region countries (`general/region/state_required`), display all regions (`general/region/display_all`)
 
 ## Version
 

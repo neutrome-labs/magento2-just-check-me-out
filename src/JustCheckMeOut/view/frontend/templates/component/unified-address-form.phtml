@@ -12,17 +12,41 @@ $address = $block->quoteViewModel->getQuote()->getShippingAddress();
 $allowedCountries = $block->configManager->getAllowedCountries();
 $allowedCountriesJson = json_encode($allowedCountries);
 
+// Address field configuration from Magento settings
+$addressConfig = $block->addressConfigProvider->getConfig();
+$addressConfigJson = $block->addressConfigProvider->getConfigJson();
+
 $constructorId = uniqid();
 $formId = uniqid('unified-address-form_');
 $addressesRadioListKey = uniqid('customer-shipping-address-');
 ?>
 
 <script>
-    function createUnifiedAddressForm<?=$constructorId?>(customerEmailFormEl) {
+    function createUnifiedAddressForm<?=$constructorId?>(customerEmailFormEl, addressConfig) {
         const formComponent = window.justCheckMeOutApiV1.component.createQuoteShippingAddressForm();
         return {
             ...formComponent,
             unifiedInteractive: true,
+            addressConfig: addressConfig,
+
+            /**
+             * Check if postcode is optional for the currently selected country
+             * @returns {boolean}
+             */
+            isPostcodeOptional() {
+                return this.addressConfig.optionalZipCountries?.includes(this.formData.country_code) ?? false;
+            },
+
+            /**
+             * Check if region is required for the currently selected country
+             * @returns {boolean}
+             */
+            isRegionRequired() {
+                const required = this.addressConfig.requiredRegionCountries ?? [];
+                const displayAll = this.addressConfig.displayAllRegions ?? false;
+                return required.includes(this.formData.country_code) || displayAll;
+            },
+
             init() {
                 formComponent.init.bind(this)();
             },
@@ -39,7 +63,7 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
     }
 </script>
 <form id="<?= $formId ?>"
-      x-data="createUnifiedAddressForm<?= $constructorId ?>($el.querySelector(`[x-ref=email]`))"
+      x-data="createUnifiedAddressForm<?= $constructorId ?>($el.querySelector(`[x-ref=email]`), <?= $escaper->escapeHtmlAttr($addressConfigJson) ?>)"
       @submit.prevent="await unifiedSave()">
     <div style="flex: 1">
         <fieldset class="field" x-data="window.justCheckMeOutApiV1.component.createCustomerEmailForm()" x-ref="email">
@@ -59,6 +83,7 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
         </fieldset>
 
         <fieldset class="field">
+            <?php if ($addressConfig['showTelephoneField']): ?>
             <div class="justcheckmeout__unified_address_form__fieldset_row">
                 <?= $block->headlessComponentRenderer->render('atom/input-text', [
                     'type' => 'text',
@@ -75,6 +100,7 @@ $addressesRadioListKey = uniqid('customer-shipping-address-');
                     ]
                 ], 'unified-address-form.input-telephone') ?>
             </div>
+            <?php endif; ?>
 
             <div class="justcheckmeout__unified_address_form__fieldset_row">
                 <?= $block->headlessComponentRenderer->render('atom/input-text', [
@@ -123,9 +149,13 @@ GRAPHQL;
     managedRegions: null,
     regionsLoading: false,
     init() {
-        // Preselect country if only one is allowed and none is set
-        if (!formData.country_code && this.allowedCountries.length === 1) {
-            formData.country_code = this.allowedCountries[0];
+        // Preselect country if only one is allowed and none is set, or use default country
+        if (!formData.country_code) {
+            if (this.allowedCountries.length === 1) {
+                formData.country_code = this.allowedCountries[0];
+            } else if (addressConfig.defaultCountry && (this.allowedCountries.length === 0 || this.allowedCountries.includes(addressConfig.defaultCountry))) {
+                formData.country_code = addressConfig.defaultCountry;
+            }
         }
 
         this.\$watch('formData.country_code', async (value) => {
@@ -141,12 +171,23 @@ JS; ?>
                 <?= $block->headlessComponentRenderer->render('atom/input-select', [
                     'props' => <<<JS
 ({
-    options: countriesGql?.data?.countries
-        ?.filter(x => allowedCountries.length === 0 || allowedCountries.includes(x.id))
-        ?.map(x => ({
-            id: x.id,
-            label: x.full_name_locale,
-        })) ?? [],
+    options: (() => {
+        const countries = countriesGql?.data?.countries
+            ?.filter(x => allowedCountries.length === 0 || allowedCountries.includes(x.id))
+            ?.map(x => ({
+                id: x.id,
+                label: x.full_name_locale,
+            })) ?? [];
+
+        // Sort with top countries first
+        const topCountries = addressConfig.topCountries ?? [];
+        if (topCountries.length > 0) {
+            const top = countries.filter(c => topCountries.includes(c.id));
+            const rest = countries.filter(c => !topCountries.includes(c.id));
+            return [...top, ...rest];
+        }
+        return countries;
+    })(),
     selected: formData.country_code,
 })
 JS,
@@ -199,7 +240,7 @@ JS,
                             'x-effect' => 'options = managedRegions'
                         ],
                         'select' => [
-                            'required' => 1,
+                            'x-bind:required' => 'isRegionRequired()',
                             'x-model' => 'formData.region_id',
                             '@change' => 'formData.region = undefined; await unifiedSave()',
                         ],
@@ -208,24 +249,23 @@ JS,
                         ],
                     ], 'unified-address-form.input-region_id') ?>
                 </template>
-                <?= $block->headlessComponentRenderer->render('atom/input-text', [
-                    'type' => 'text',
-                    'name' => 'region',
-                    'label' => __('Region'),
-                    'wrapper' => [
-                        'x-show' => 'managedRegions === null'
-                    ],
-                    'attributes' => [
-                        'required' => 1,
-                        'value' => $address->getRegion(),
-                        'x-model' => 'formData.region',
-                        ':disabled' => 'regionsLoading',
-                        'x-effect' => 'state = focusedFieldKey != "region" && formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
-                        '@focusin' => 'focusedFieldKey = "region"',
-                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("region", "touched", true); setFieldMetaData("region", "valid", true)',
-                        '@change' => 'formData.region_id = undefined; await unifiedSave()',
-                    ]
-                ], 'unified-address-form.input-region') ?>
+                <template x-if="managedRegions === null && (isRegionRequired() || addressConfig.displayAllRegions)">
+                    <?= $block->headlessComponentRenderer->render('atom/input-text', [
+                        'type' => 'text',
+                        'name' => 'region',
+                        'label' => __('Region'),
+                        'attributes' => [
+                            'x-bind:required' => 'isRegionRequired()',
+                            'value' => $address->getRegion(),
+                            'x-model' => 'formData.region',
+                            ':disabled' => 'regionsLoading',
+                            'x-effect' => 'state = focusedFieldKey != "region" && formMetaData?.region?.touched ? (formMetaData?.region?.valid ? "" : "error") : ""; subtitle = formMetaData?.region?.subtitle',
+                            '@focusin' => 'focusedFieldKey = "region"',
+                            '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("region", "touched", true); setFieldMetaData("region", "valid", true)',
+                            '@change' => 'formData.region_id = undefined; await unifiedSave()',
+                        ]
+                    ], 'unified-address-form.input-region') ?>
+                </template>
             </div>
 
             <div class="justcheckmeout__unified_address_form__fieldset_row">
@@ -248,7 +288,7 @@ JS,
                     'name' => 'postcode',
                     'label' => __('Postcode'),
                     'attributes' => [
-                        'required' => 1,
+                        'x-bind:required' => '!isPostcodeOptional()',
                         'value' => $address->getPostcode(),
                         'x-model' => 'formData.postcode',
                         'x-effect' => 'state = focusedFieldKey != "postcode" && formMetaData?.postcode?.touched ? (formMetaData?.postcode?.valid ? "" : "error") : ""; subtitle = formMetaData?.postcode?.subtitle',
@@ -259,35 +299,33 @@ JS,
                 ], 'unified-address-form.input-postcode') ?>
             </div>
 
+            <?php
+            // Render street lines based on configuration (default 2, max 20)
+            $streetLines = $addressConfig['streetLines'];
+            for ($i = 0; $i < $streetLines; $i++):
+                $lineNumber = $i + 1;
+                $isFirstLine = $i === 0;
+            ?>
             <div class="justcheckmeout__unified_address_form__fieldset_row">
                 <?= $block->headlessComponentRenderer->render('atom/input-text', [
                     'type' => 'text',
-                    'name' => 'street_1',
-                    'label' => __('Street'),
-                    'attributes' => [
-                        'required' => 1,
-                        'value' => $address->getStreetLine(1),
-                        'x-model' => 'formData.street[0]',
-                        'x-effect' => 'state = focusedFieldKey != "street" && formMetaData?.street?.touched ? (formMetaData?.street?.valid ? "" : "error") : ""; subtitle = formMetaData?.street?.subtitle',
+                    'name' => 'street_' . $lineNumber,
+                    'label' => $isFirstLine ? __('Street') : null,
+                    'attributes' => array_filter([
+                        'required' => $isFirstLine ? 1 : null,
+                        'value' => $address->getStreetLine($lineNumber),
+                        'x-model' => 'formData.street[' . $i . ']',
+                        'x-effect' => $isFirstLine
+                            ? 'state = focusedFieldKey != "street" && formMetaData?.street?.touched ? (formMetaData?.street?.valid ? "" : "error") : ""; subtitle = formMetaData?.street?.subtitle'
+                            : null,
                         '@focusin' => 'focusedFieldKey = "street"',
                         '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("street", "touched", true); setFieldMetaData("street", "valid", true)',
-                        '@change' => 'await unifiedSave()'
-                    ]
-                ], 'unified-address-form.input-street_1') ?>
+                        '@change' => 'await unifiedSave()',
+                        'placeholder' => !$isFirstLine ? __('Street Line %1', $lineNumber) : null,
+                    ], fn($v) => $v !== null)
+                ], 'unified-address-form.input-street_' . $lineNumber) ?>
             </div>
-            <div class="justcheckmeout__unified_address_form__fieldset_row">
-                <?= $block->headlessComponentRenderer->render('atom/input-text', [
-                    'type' => 'text',
-                    'name' => 'street_2',
-                    'attributes' => [
-                        'value' => $address->getStreetLine(2),
-                        'x-model' => 'formData.street[1]',
-                        '@focusin' => 'focusedFieldKey = "street"',
-                        '@focusout' => 'focusedFieldKey = undefined; setFieldMetaData("street", "touched", true); setFieldMetaData("street", "valid", true)',
-                        '@change' => 'await unifiedSave()'
-                    ]
-                ], 'unified-address-form.input-street_2') ?>
-            </div>
+            <?php endfor; ?>
         </fieldset>
     </div>
 </form>

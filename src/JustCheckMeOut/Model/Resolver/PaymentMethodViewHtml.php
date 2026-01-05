@@ -1,12 +1,12 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Model\Resolver;
+namespace NeutromeLabs\JustCheckMeOut\Model\Resolver;
 
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
-use PerspectiveTeam\JustCheckMeOut\Service\AdditionalViewRenderer;
-use PerspectiveTeam\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry;
+use NeutromeLabs\JustCheckMeOut\Service\AdditionalViewRenderer;
+use NeutromeLabs\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry;
 
 class PaymentMethodViewHtml implements ResolverInterface
 {

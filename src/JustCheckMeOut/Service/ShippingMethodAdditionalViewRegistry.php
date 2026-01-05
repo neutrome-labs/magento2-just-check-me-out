@@ -1,8 +1,8 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Service;
+namespace NeutromeLabs\JustCheckMeOut\Service;
 
-use PerspectiveTeam\JustCheckMeOut\Api\AdditionalViewInterface;
+use NeutromeLabs\JustCheckMeOut\Api\AdditionalViewInterface;
 
 class ShippingMethodAdditionalViewRegistry
 {

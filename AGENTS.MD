@@ -64,8 +64,8 @@ src/JustCheckMeOutWithStripe/
 ## Coding Standards
 
 - **PHP**: Follow Magento 2 coding standards (PSR-12 based), `declare(strict_types=1)` required
-- **Namespace**: `PerspectiveTeam\JustCheckMeOut\`
-- **Module Name**: `PerspectiveTeam_JustCheckMeOut`
+- **Namespace**: `NeutromeLabs\JustCheckMeOut\`
+- **Module Name**: `NeutromeLabs_JustCheckMeOut`
 - **Config Path**: `neutromelabs_justcheckmeout/`
 
 ## Architecture Decisions
@@ -119,7 +119,7 @@ justCheckMeOutApiV1.fn.*                                // Utility functions
 ### Adding a Payment Method Additional View
 ```xml
 <!-- di.xml -->
-<virtualType name="myPaymentAdditionalView" type="PerspectiveTeam\JustCheckMeOut\Model\AdditionalView">
+<virtualType name="myPaymentAdditionalView" type="NeutromeLabs\JustCheckMeOut\Model\AdditionalView">
     <arguments>
         <argument name="kind" xsi:type="string">block</argument>
         <argument name="argument" xsi:type="array">
@@ -127,7 +127,7 @@ justCheckMeOutApiV1.fn.*                                // Utility functions
         </argument>
     </arguments>
 </virtualType>
-<type name="PerspectiveTeam\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry">
+<type name="NeutromeLabs\JustCheckMeOut\Service\PaymentMethodAdditionalViewRegistry">
     <arguments>
         <argument name="items" xsi:type="array">
             <item name="my_payment_code" xsi:type="object">myPaymentAdditionalView</item>

@@ -7,7 +7,7 @@
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">
-                            <resource id="PerspectiveTeam_JustCheckMeOut::admin" title="JustCheckMeOut Checkout Configuration"/>
+                            <resource id="NeutromeLabs_JustCheckMeOut::admin" title="JustCheckMeOut Checkout Configuration"/>
                         </resource>
                     </resource>
                 </resource>

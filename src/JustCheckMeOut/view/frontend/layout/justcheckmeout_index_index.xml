@@ -3,63 +3,63 @@
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd"
       layout="1column">
     <head>
-        <css src="PerspectiveTeam_JustCheckMeOut::css/styles.css" />
+        <css src="NeutromeLabs_JustCheckMeOut::css/styles.css" />
     </head>
     <body>
        <referenceBlock name="script-alpine-js">
             <block name="alpine-plugin-collapse"
-                   template="PerspectiveTeam_JustCheckMeOut::page/js/plugins/collapse.phtml"/>
+                   template="NeutromeLabs_JustCheckMeOut::page/js/plugins/collapse.phtml"/>
             <block name="alpine-plugin-tooltip"
-                   template="PerspectiveTeam_JustCheckMeOut::page/js/plugins/tooltip.phtml"/>
+                   template="NeutromeLabs_JustCheckMeOut::page/js/plugins/tooltip.phtml"/>
         </referenceBlock>
         <referenceContainer name="content">
-            <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+            <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                    name="checkout.main"
-                   template="PerspectiveTeam_JustCheckMeOut::main.phtml">
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                   template="NeutromeLabs_JustCheckMeOut::main.phtml">
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.unified-address-form" as="unified-address-form"
-                       template="PerspectiveTeam_JustCheckMeOut::component/unified-address-form.phtml"/>
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                       template="NeutromeLabs_JustCheckMeOut::component/unified-address-form.phtml"/>
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.shipping-method-list" as="shipping-method-list"
-                       template="PerspectiveTeam_JustCheckMeOut::component/shipping-method-list.phtml"/>
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                       template="NeutromeLabs_JustCheckMeOut::component/shipping-method-list.phtml"/>
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.items" as="items"
-                       template="PerspectiveTeam_JustCheckMeOut::component/items.phtml"/>
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                       template="NeutromeLabs_JustCheckMeOut::component/items.phtml"/>
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.totals" as="totals"
-                       template="PerspectiveTeam_JustCheckMeOut::component/totals.phtml"/>
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                       template="NeutromeLabs_JustCheckMeOut::component/totals.phtml"/>
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.payment-method-list" as="payment-method-list"
-                       template="PerspectiveTeam_JustCheckMeOut::component/payment-method-list.phtml"/>
-                <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+                       template="NeutromeLabs_JustCheckMeOut::component/payment-method-list.phtml"/>
+                <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                        name="justcheckmeout.place-order-button" as="place-order-button"
-                       template="PerspectiveTeam_JustCheckMeOut::component/place-order-button.phtml"/>
+                       template="NeutromeLabs_JustCheckMeOut::component/place-order-button.phtml"/>
             </block>
         </referenceContainer>
         <referenceContainer name="before.body.end">
             <block class="Magento\Framework\View\Element\Template"
                    name="justcheckmeout.script-alpine"
-                   template="PerspectiveTeam_JustCheckMeOut::script-alpine.phtml">
+                   template="NeutromeLabs_JustCheckMeOut::script-alpine.phtml">
                 <arguments>
-                    <argument name="configManager" xsi:type="object">PerspectiveTeam\JustCheckMeOut\Service\ConfigManager</argument>
+                    <argument name="configManager" xsi:type="object">NeutromeLabs\JustCheckMeOut\Service\ConfigManager</argument>
                 </arguments>
             </block>
-            <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+            <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                    name="justcheckmeout.api"
-                   template="PerspectiveTeam_JustCheckMeOut::api.phtml">
+                   template="NeutromeLabs_JustCheckMeOut::api.phtml">
                 <container name="justcheckmeout.api.after">
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/customer-email-form.phtml"/>
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/shipping-address-form.phtml"/>
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/shipping-method-list.phtml"/>
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/totals.phtml"/>
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/payment-method-list.phtml"/>
-                    <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
-                           template="PerspectiveTeam_JustCheckMeOut::api/component/place-order-button.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/customer-email-form.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/shipping-address-form.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/shipping-method-list.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/totals.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/payment-method-list.phtml"/>
+                    <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
+                           template="NeutromeLabs_JustCheckMeOut::api/component/place-order-button.phtml"/>
                 </container>
             </block>
         </referenceContainer>

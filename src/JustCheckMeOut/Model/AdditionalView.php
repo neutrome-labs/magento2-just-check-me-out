@@ -1,9 +1,9 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Model;
+namespace NeutromeLabs\JustCheckMeOut\Model;
 
 use Magento\Framework\DataObject;
-use PerspectiveTeam\JustCheckMeOut\Api\AdditionalViewInterface;
+use NeutromeLabs\JustCheckMeOut\Api\AdditionalViewInterface;
 
 class AdditionalView extends DataObject implements AdditionalViewInterface
 {

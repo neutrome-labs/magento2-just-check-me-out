@@ -1,6 +1,6 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
+namespace NeutromeLabs\JustCheckMeOut\ViewModel;
 
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Exception\NoSuchEntityException;

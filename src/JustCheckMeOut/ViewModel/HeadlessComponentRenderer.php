@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PerspectiveTeam\JustCheckMeOut\ViewModel;
+namespace NeutromeLabs\JustCheckMeOut\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use NeutromeLabs\HeadlessComponents\Service\AttributesHtmlGenerator;

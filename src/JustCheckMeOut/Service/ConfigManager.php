@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PerspectiveTeam\JustCheckMeOut\Service;
+namespace NeutromeLabs\JustCheckMeOut\Service;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\SerializerInterface;

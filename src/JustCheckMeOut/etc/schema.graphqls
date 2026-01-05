@@ -15,17 +15,17 @@ directive @resolver(class: String="") on QUERY
     | INPUT_FIELD_DEFINITION
 
 type AvailableShippingMethod {
-    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
+    justcheckmeout_view_html: String @resolver(class: "NeutromeLabs\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
 }
 
 type SelectedShippingMethod {
-    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
+    justcheckmeout_view_html: String @resolver(class: "NeutromeLabs\\JustCheckMeOut\\Model\\Resolver\\ShippingMethodViewHtml")
 }
 
 type AvailablePaymentMethod {
-    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
+    justcheckmeout_view_html: String @resolver(class: "NeutromeLabs\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
 }
 
 type SelectedPaymentMethod {
-    justcheckmeout_view_html: String @resolver(class: "PerspectiveTeam\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
+    justcheckmeout_view_html: String @resolver(class: "NeutromeLabs\\JustCheckMeOut\\Model\\Resolver\\PaymentMethodViewHtml")
 }

@@ -1,11 +1,11 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Plugin;
+namespace NeutromeLabs\JustCheckMeOut\Plugin;
 
 use Magento\Checkout\Controller\Index\Index;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
-use PerspectiveTeam\JustCheckMeOut\Service\ConfigManager;
+use NeutromeLabs\JustCheckMeOut\Service\ConfigManager;
 
 class CheckoutControllerPlugin
 {

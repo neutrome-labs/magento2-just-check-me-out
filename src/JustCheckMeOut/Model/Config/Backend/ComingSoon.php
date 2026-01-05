@@ -1,6 +1,6 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Model\Config\Backend;
+namespace NeutromeLabs\JustCheckMeOut\Model\Config\Backend;
 
 use Magento\Framework\Data\OptionSourceInterface;
 

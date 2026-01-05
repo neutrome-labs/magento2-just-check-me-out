@@ -1,15 +1,15 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Service;
+namespace NeutromeLabs\JustCheckMeOut\Service;
 
 use Magento\Framework\App\State;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Store\Model\App\Emulation;
 use Magento\Store\Model\StoreManagerInterface;
-use PerspectiveTeam\JustCheckMeOut\Api\AdditionalViewInterface;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use NeutromeLabs\JustCheckMeOut\Api\AdditionalViewInterface;
+use NeutromeLabs\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use NeutromeLabs\JustCheckMeOut\ViewModel\QuoteViewModel;
 
 class AdditionalViewRenderer
 {

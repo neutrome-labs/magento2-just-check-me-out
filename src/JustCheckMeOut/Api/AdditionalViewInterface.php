@@ -1,6 +1,6 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Api;
+namespace NeutromeLabs\JustCheckMeOut\Api;
 
 interface AdditionalViewInterface
 {

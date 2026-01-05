@@ -3,9 +3,9 @@
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceContainer name="justcheckmeout.api.after">
-            <block class="PerspectiveTeam\JustCheckMeOut\Block\Stateful"
+            <block class="NeutromeLabs\JustCheckMeOut\Block\Stateful"
                    name="justcheckmeout.api.stripe"
-                   template="PerspectiveTeam_JustCheckMeOutWithStripe::script.phtml"/>
+                   template="NeutromeLabs_JustCheckMeOutWithStripe::script.phtml"/>
         </referenceContainer>
     </body>
 </page>

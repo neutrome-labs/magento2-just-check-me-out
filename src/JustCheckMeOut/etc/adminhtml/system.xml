@@ -11,7 +11,7 @@
         >
             <label>JustCheckMeOut</label>
             <tab>neutromelabs</tab>
-            <resource>PerspectiveTeam_JustCheckMeOut::admin</resource>
+            <resource>NeutromeLabs_JustCheckMeOut::admin</resource>
             <group id="general" sortOrder="10" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
                 <label>General</label>
                 <field id="enable" type="select" sortOrder="10"
@@ -65,7 +65,7 @@
                 >
                     <label>Enable Login Dropdown Over Email Field</label>
                     <comment/>
-                    <source_model>PerspectiveTeam\JustCheckMeOut\Model\Config\Backend\ComingSoon</source_model>
+                    <source_model>NeutromeLabs\JustCheckMeOut\Model\Config\Backend\ComingSoon</source_model>
                 </field>
             </group>
             <group id="shipping_address_form" sortOrder="30" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">

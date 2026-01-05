@@ -1,12 +1,12 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Controller\Index;
+namespace NeutromeLabs\JustCheckMeOut\Controller\Index;
 
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\View\Result\PageFactory;
-use PerspectiveTeam\JustCheckMeOut\Service\ConfigManager;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use NeutromeLabs\JustCheckMeOut\Service\ConfigManager;
+use NeutromeLabs\JustCheckMeOut\ViewModel\QuoteViewModel;
 
 class Index implements HttpGetActionInterface
 {

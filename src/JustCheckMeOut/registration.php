@@ -2,6 +2,6 @@
 
 \Magento\Framework\Component\ComponentRegistrar::register(
     \Magento\Framework\Component\ComponentRegistrar::MODULE,
-    'PerspectiveTeam_JustCheckMeOut',
+    'NeutromeLabs_JustCheckMeOut',
     __DIR__
 );

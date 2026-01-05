@@ -1,11 +1,11 @@
 <?php
 
-namespace PerspectiveTeam\JustCheckMeOut\Block;
+namespace NeutromeLabs\JustCheckMeOut\Block;
 
 use Magento\Framework\View\Element\Template;
-use PerspectiveTeam\JustCheckMeOut\Service\ConfigManager;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
-use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
+use NeutromeLabs\JustCheckMeOut\Service\ConfigManager;
+use NeutromeLabs\JustCheckMeOut\ViewModel\HeadlessComponentRenderer;
+use NeutromeLabs\JustCheckMeOut\ViewModel\QuoteViewModel;
 use NeutromeLabs\SsrGraphql\ViewModel\SsrGraphqlViewModel;
 
 class Stateful extends Template

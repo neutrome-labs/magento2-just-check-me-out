@@ -2,4 +2,4 @@
 
 use Magento\Framework\Component\ComponentRegistrar;
 
-ComponentRegistrar::register(ComponentRegistrar::MODULE, 'PerspectiveTeam_JustCheckMeOutWithStripe', __DIR__);
+ComponentRegistrar::register(ComponentRegistrar::MODULE, 'NeutromeLabs_JustCheckMeOutWithStripe', __DIR__);

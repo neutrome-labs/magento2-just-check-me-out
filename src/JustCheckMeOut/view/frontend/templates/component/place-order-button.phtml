@@ -11,19 +11,21 @@ use PerspectiveTeam\JustCheckMeOut\ViewModel\QuoteViewModel;
 /** @var Escaper $escaper */
 ?>
 
-<div x-data="window.justCheckMeOutApiV1.component.createPlaceOrder()" style="display: flex; flex-direction: column; gap: 10px">
-    <div style="display: flex; flex-direction: column;"
+<div x-data="window.justCheckMeOutApiV1.component.createPlaceOrder()" class="justcheckmeout__place-order">
+    <div class="actions-toolbar"
          @mouseover="await loopGuards()"
          x-tooltip.html.placement.bottom="guardsHintHtml()">
-        <?= $block->headlessComponentRenderer->render('atom/button', [
-            'label' => __('Place Order'),
-            ':label' => 'buttonLabel',
-            'attributes' => [
-                'type' => 'button',
-                'disabled' => 'true',
-                ':disabled' => '!interactive',
-                '@click' => 'await placeAndGoNext()',
-            ]
-        ]) ?>
+        <div class="primary">
+            <?= $block->headlessComponentRenderer->render('atom/button', [
+                'label' => __('Place Order'),
+                ':label' => 'buttonLabel',
+                'attributes' => [
+                    'type' => 'button',
+                    'disabled' => 'true',
+                    ':disabled' => '!interactive',
+                    '@click' => 'await placeAndGoNext()',
+                ]
+            ]) ?>
+        </div>
     </div>
 </div>

@@ -21,7 +21,7 @@ use NeutromeLabs\HeadlessComponents\Block\Headless;
                 this.messages.push(message);
                 setTimeout(() => {
                     this.remove(message.id);
-                }, 3000);
+                }, 6000);
             },
             remove: function(id) {
                 this.messages = this.messages.filter(message => message.id !== id);

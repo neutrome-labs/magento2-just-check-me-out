@@ -64,6 +64,34 @@
     box-sizing: border-box;
 }
 
+/* Place Order Button */
+.justcheckmeout__place-order .actions-toolbar .primary {
+    width: 100%;
+}
+
+.justcheckmeout__place-order .action.primary {
+    width: 100%;
+    background: #1979c3;
+    border: 1px solid #1979c3;
+    color: #fff;
+    padding: 14px 17px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.justcheckmeout__place-order .action.primary:hover {
+    background: #006bb4;
+    border-color: #006bb4;
+}
+
+.justcheckmeout__place-order .action.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .field.required label.label:after {
     content: "*";
     color: red;
